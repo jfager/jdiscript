@@ -1,0 +1,3 @@
+A wrapper around the Java Debugger Interface which allows you to define 
+debugging routines as Event Handler classes.  More to come...
+
