@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jdiscript.BaseDebugEventHandler;
+import org.jdiscript.events.BaseDebugEventHandler;
 
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
