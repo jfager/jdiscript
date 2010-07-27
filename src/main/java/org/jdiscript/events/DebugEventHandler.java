@@ -4,6 +4,7 @@ import com.sun.jdi.event.AccessWatchpointEvent;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.ClassUnloadEvent;
+import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.ExceptionEvent;
 import com.sun.jdi.event.LocatableEvent;
@@ -73,4 +74,6 @@ public interface DebugEventHandler {
     void vmDisconnect( VMDisconnectEvent e );
     void vmStart( VMStartEvent e );
     void watchpoint( WatchpointEvent e );
+    
+    void unhandledEvent( Event e );
 }
