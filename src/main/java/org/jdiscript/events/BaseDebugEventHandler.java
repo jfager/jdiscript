@@ -1,4 +1,4 @@
-package org.jdiscript;
+package org.jdiscript.events;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

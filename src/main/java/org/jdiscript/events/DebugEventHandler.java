@@ -1,4 +1,4 @@
-package org.jdiscript;
+package org.jdiscript.events;
 
 import com.sun.jdi.event.AccessWatchpointEvent;
 import com.sun.jdi.event.BreakpointEvent;

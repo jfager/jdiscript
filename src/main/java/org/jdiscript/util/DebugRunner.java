@@ -2,8 +2,8 @@ package org.jdiscript.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jdiscript.DebugEventHandler;
-import org.jdiscript.EventThread;
+import org.jdiscript.events.DebugEventHandler;
+import org.jdiscript.events.EventThread;
 
 import com.sun.jdi.VirtualMachine;
 

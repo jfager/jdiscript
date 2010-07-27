@@ -1,6 +1,7 @@
 
 package org.jdiscript
 
+import org.jdiscript.events.BaseDebugEventHandler;
 import org.jdiscript.util.DebugRunner;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ThreadReference;

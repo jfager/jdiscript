@@ -1,4 +1,4 @@
-package org.jdiscript;
+package org.jdiscript.events;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

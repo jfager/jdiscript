@@ -1,5 +1,6 @@
 package org.jdiscript;
 
+import org.jdiscript.events.BaseDebugEventHandler;
 import org.jdiscript.example.HelloWorld;
 
 import org.jdiscript.util.DebugRunner;
