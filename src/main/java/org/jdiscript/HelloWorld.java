@@ -1,13 +1,13 @@
-package com.jasonfager.debug;
+package org.jdiscript;
 
 //A test class you can use for simple debugging scripts.
 public class HelloWorld {
-	public static final String HELLO_PROP_KEY
-		= "com.jasonfager.jdiscript.helloTo";	
+	private String helloTo;
 
-	private String helloTo = "World";
+	public HelloWorld() {
+		this("World");
+	}
 	
-	public HelloWorld() {}
 	public HelloWorld(String helloTo) {
 		if(helloTo != null) {
 			this.helloTo = helloTo;
@@ -19,8 +19,12 @@ public class HelloWorld {
 	}
 	
 	public static void main(String[] args) {
-		final HelloWorld hello;
-		hello = new HelloWorld(System.getProperty(HELLO_PROP_KEY));
+		HelloWorld hello;
+		
+		hello = new HelloWorld();
+		System.out.println(hello.sayHello());
+		
+		hello = new HelloWorld("Barry");
 		System.out.println(hello.sayHello());
 	}
 }

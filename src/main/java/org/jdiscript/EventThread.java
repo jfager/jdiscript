@@ -32,7 +32,7 @@
  * redistribute the Software for such purposes.
  */
 
-package com.jasonfager.debug;
+package org.jdiscript;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

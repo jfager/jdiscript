@@ -31,7 +31,7 @@
  * facility. Licensee represents and warrants that it will not use or
  * redistribute the Software for such purposes.
  */
-package com.jasonfager.debug.util;
+package org.jdiscript.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;

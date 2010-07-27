@@ -1,4 +1,4 @@
-package com.jasonfager.debug;
+package org.jdiscript;
 
 import com.sun.jdi.event.Event;
 

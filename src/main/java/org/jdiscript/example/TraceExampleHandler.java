@@ -1,4 +1,4 @@
-package com.jasonfager.debug.example;
+package org.jdiscript.example;
 
 import java.util.HashMap;
 import java.util.List;
@@ -6,8 +6,8 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jdiscript.BaseDebugEventHandler;
 
-import com.jasonfager.debug.BaseDebugEventHandler;
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.ThreadReference;

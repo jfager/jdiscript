@@ -1,4 +1,4 @@
-package com.jasonfager.debug;
+package org.jdiscript;
 
 import com.sun.jdi.event.AccessWatchpointEvent;
 import com.sun.jdi.event.BreakpointEvent;

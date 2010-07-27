@@ -1,4 +1,4 @@
-package com.jasonfager.debug.util;
+package org.jdiscript.util;
 
 import java.io.IOException;
 import java.util.Map;
@@ -13,8 +13,7 @@ import com.sun.jdi.connect.Connector.Argument;
 
 public class VMStarter {
 	private final String options, main;
-
-	private boolean killOnShutdown;
+	private final boolean killOnShutdown;
 	
 	/**
 	 * Create a VMStarter that uses the given options and main class to launch 
@@ -30,7 +29,7 @@ public class VMStarter {
 	}
 
 	/**
-	 * Alternate constructor giving controlling the initialization of a 
+	 * Alternate constructor giving control over the initialization of a 
 	 * shutdown hook that attempts to kill the created VM when the debugging 
 	 * VM dies.
 	 * 

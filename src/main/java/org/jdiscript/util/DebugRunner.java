@@ -1,10 +1,10 @@
-package com.jasonfager.debug.util;
+package org.jdiscript.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jdiscript.DebugEventHandler;
+import org.jdiscript.EventThread;
 
-import com.jasonfager.debug.DebugEventHandler;
-import com.jasonfager.debug.EventThread;
 import com.sun.jdi.VirtualMachine;
 
 public class DebugRunner {

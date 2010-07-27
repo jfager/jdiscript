@@ -1,4 +1,4 @@
-package com.jasonfager.debug;
+package org.jdiscript;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,11 +26,10 @@ import com.sun.jdi.event.VMStartEvent;
 import com.sun.jdi.event.WatchpointEvent;
 import com.sun.jdi.request.EventRequest;
 
-
 /**
- * Provides a default implementation for each method of DebugEventHandler, 
- * that throws UnhandledEventExceptions for events that must be requested
- * but aren't implemented.
+ * For each method of DebugEventHandler, throw an UnhandledEventException 
+ * for events that must be requested but aren't implemented.  This class is
+ * intended to be subclassed.
  *  
  * @author jfager
  */
