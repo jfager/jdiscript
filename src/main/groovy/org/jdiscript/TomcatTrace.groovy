@@ -1,7 +1,7 @@
 package org.jdiscript
 
-import com.jasonfager.debug.util.DebugRunner
-import com.jasonfager.debug.example.TraceExampleHandler
+import org.jdiscript.util.DebugRunner
+import org.jdiscript.example.TraceExampleHandler
 import com.sun.jdi.VirtualMachine
 
 public class TomcatTrace {

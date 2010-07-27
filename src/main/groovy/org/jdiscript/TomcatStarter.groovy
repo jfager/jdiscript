@@ -1,6 +1,6 @@
 package org.jdiscript
 
-import com.jasonfager.debug.util.VMStarter;
+import org.jdiscript.util.VMStarter;
 import com.sun.jdi.VirtualMachine;
 
 

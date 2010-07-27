@@ -1,7 +1,9 @@
 package org.jdiscript;
 
-import com.jasonfager.debug.util.DebugRunner;
-import com.jasonfager.debug.util.VMStarter;
+import org.jdiscript.example.HelloWorld;
+
+import org.jdiscript.util.DebugRunner;
+import org.jdiscript.util.VMStarter;
 import com.sun.jdi.StringReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.AccessWatchpointEvent;

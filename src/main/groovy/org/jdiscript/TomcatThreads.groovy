@@ -1,7 +1,7 @@
 
 package org.jdiscript
 
-import com.jasonfager.debug.util.DebugRunner;
+import org.jdiscript.util.DebugRunner;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
