@@ -1,5 +1,5 @@
 
-package com.jasonfager.debug
+package org.jdiscript
 
 import com.jasonfager.debug.util.DebugRunner;
 import com.sun.jdi.ObjectReference;

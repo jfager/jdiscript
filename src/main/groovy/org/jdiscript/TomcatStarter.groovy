@@ -1,4 +1,4 @@
-package com.jasonfager.debug
+package org.jdiscript
 
 import com.jasonfager.debug.util.VMStarter;
 import com.sun.jdi.VirtualMachine;
