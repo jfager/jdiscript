@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jdiscript.BaseDebugEventHandler;
 
 import com.sun.jdi.Field;
@@ -35,7 +35,8 @@ import com.sun.jdi.request.ThreadDeathRequest;
 
 public class TraceExampleHandler extends BaseDebugEventHandler {
 
-	private static final Log log = LogFactory.getLog(TraceExampleHandler.class);
+	private static final Logger log 
+		= LoggerFactory.getLogger(TraceExampleHandler.class);
 
 	private final VirtualMachine vm; // Running VM
 	private final String[] excludes; // Packages to exclude

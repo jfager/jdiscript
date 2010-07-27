@@ -40,8 +40,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * StreamRedirectThread is a thread which copies its input to its output and
@@ -51,8 +51,8 @@ import org.apache.commons.logging.LogFactory;
  * @author Robert Field
  */
 class StreamRedirectThread extends Thread {
-	private static final Log log 
-		= LogFactory.getLog(StreamRedirectThread.class); 
+	private static final Logger log 
+		= LoggerFactory.getLogger(StreamRedirectThread.class); 
 
 	private final BufferedReader in;
 	private final PrintStream out;

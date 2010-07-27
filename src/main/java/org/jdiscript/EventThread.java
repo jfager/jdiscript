@@ -34,8 +34,8 @@
 
 package org.jdiscript;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
@@ -55,7 +55,8 @@ import com.sun.jdi.event.VMDisconnectEvent;
  */
 public class EventThread extends Thread {
 
-	private static final Log log = LogFactory.getLog(EventThread.class);
+	private static final Logger log 
+		= LoggerFactory.getLogger(EventThread.class);
 
 	private final VirtualMachine vm; // Running VM
 	private final DebugEventHandler handler;
