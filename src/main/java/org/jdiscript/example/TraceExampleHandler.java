@@ -33,7 +33,6 @@ import com.sun.jdi.request.ThreadDeathRequest;
 
 public class TraceExampleHandler extends DebugEventHandler {
 
-	private final VirtualMachine vm; // Running VM
 	private final String[] excludes; // Packages to exclude
 
 	private Map<ThreadReference, ThreadTrace> traceMap
@@ -45,7 +44,7 @@ public class TraceExampleHandler extends DebugEventHandler {
 
 	public TraceExampleHandler(	final VirtualMachine vm )
 	{
-		this.vm = vm;
+		super(vm);
 		this.excludes = new String[0];
 	}
 
@@ -59,35 +58,34 @@ public class TraceExampleHandler extends DebugEventHandler {
 	 *            Do we want to watch assignments to fields
 	 */
 	void setEventRequests(boolean watchFields) {
-		EventRequestManager mgr = vm.eventRequestManager();
 
 		// want all exceptions
-		ExceptionRequest excReq = mgr.createExceptionRequest(null, true, true);
+		ExceptionRequest excReq = exceptionRequest(null, true, true);
 		// suspend so we can step
 		excReq.setSuspendPolicy(EventRequest.SUSPEND_ALL);
 		excReq.enable();
 
-		MethodEntryRequest menr = mgr.createMethodEntryRequest();
+		MethodEntryRequest menr = methodEntryRequest();
 		for (int i = 0; i < excludes.length; ++i) {
 			menr.addClassExclusionFilter(excludes[i]);
 		}
 		menr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
 		menr.enable();
 
-		MethodExitRequest mexr = mgr.createMethodExitRequest();
+		MethodExitRequest mexr = methodExitRequest();
 		for (int i = 0; i < excludes.length; ++i) {
 			mexr.addClassExclusionFilter(excludes[i]);
 		}
 		mexr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
 		mexr.enable();
 
-		ThreadDeathRequest tdr = mgr.createThreadDeathRequest();
+		ThreadDeathRequest tdr = threadDeathRequest();
 		// Make sure we sync on thread death
 		tdr.setSuspendPolicy(EventRequest.SUSPEND_ALL);
 		tdr.enable();
 
 		if (watchFields) {
-			ClassPrepareRequest cpr = mgr.createClassPrepareRequest();
+			ClassPrepareRequest cpr = classPrepareRequest();
 			for (int i = 0; i < excludes.length; ++i) {
 				cpr.addClassExclusionFilter(excludes[i]);
 			}
@@ -154,11 +152,10 @@ public class TraceExampleHandler extends DebugEventHandler {
 	 */
 	@Override
 	public void classPrepare(ClassPrepareEvent event) {
-		EventRequestManager mgr = vm.eventRequestManager();
 		List<Field> fields = event.referenceType().visibleFields();
 		for (Field field : fields) {
 			ModificationWatchpointRequest req
-				= mgr.createModificationWatchpointRequest(field);
+				= modificationWatchpointRequest(field);
 			for (int i = 0; i < excludes.length; ++i) {
 				req.addClassExclusionFilter(excludes[i]);
 			}
@@ -231,8 +228,7 @@ public class TraceExampleHandler extends DebugEventHandler {
 					+ event.catchLocation());
 
 			// Step to the catch
-			EventRequestManager mgr = vm.eventRequestManager();
-			StepRequest req = mgr.createStepRequest(thread,
+			StepRequest req = stepRequest(thread,
 					StepRequest.STEP_MIN, StepRequest.STEP_INTO);
 			req.addCountFilter(1); // next step only
 			req.setSuspendPolicy(EventRequest.SUSPEND_ALL);
@@ -252,8 +248,7 @@ public class TraceExampleHandler extends DebugEventHandler {
 				indent.append("| ");
 			}
 
-			EventRequestManager mgr = vm.eventRequestManager();
-			mgr.deleteEventRequest(event.request());
+			deleteEventRequest(event.request());
 		}
 
 		void threadDeath(ThreadDeathEvent event) {

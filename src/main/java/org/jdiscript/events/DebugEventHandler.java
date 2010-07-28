@@ -327,11 +327,11 @@ public abstract class DebugEventHandler
         return filter(erm.vmDeathRequests());
     }
 
-    void deleteEventRequest(EventRequest eventRequest) {
+    public void deleteEventRequest(EventRequest eventRequest) {
     	erm.deleteEventRequest(eventRequest);
     }
     
-    void deleteEventRequests(List<? extends EventRequest> eventRequests) {
+    public void deleteEventRequests(List<? extends EventRequest> eventRequests) {
     	erm.deleteEventRequests(eventRequests);
     }
 
