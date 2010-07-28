@@ -1,20 +1,34 @@
 package org.jdiscript.util;
 
+import java.io.OutputStream;
+
 import org.jdiscript.events.DebugEventDispatcher;
+import org.jdiscript.events.DebugEventHandler;
 import org.jdiscript.events.EventThread;
 
 import com.sun.jdi.VirtualMachine;
 
 public class DebugRunner {
-	private Thread errThread;
-	private Thread outThread;
 	
 	private final VirtualMachine vm;
 	private final DebugEventDispatcher dispatcher;
 	
-	public DebugRunner(VirtualMachine vm, DebugEventDispatcher dispatcher) {
+	private final OutputStream out;
+	private final OutputStream err;
+	
+	public DebugRunner(VirtualMachine vm) {
+		this(vm, System.out, System.err);
+	}
+	
+	public DebugRunner(VirtualMachine vm, OutputStream out, OutputStream err) {
 		this.vm = vm;
-		this.dispatcher = dispatcher;
+		this.out = out;
+		this.err = err;
+		this.dispatcher = new DebugEventDispatcher();
+	}
+	
+	public void addHandler(DebugEventHandler handler) {
+		dispatcher.addHandler(handler);
 	}
 	
 	public void run() {
@@ -31,17 +45,23 @@ public class DebugRunner {
 		} catch(InterruptedException exc) {}		
 	}
 	
-	void redirectOutput() {
+	private void redirectOutput() {
 		Process process = vm.process();
-		errThread = new StreamRedirectThread(	"error reader",
-												process.getErrorStream(),
-												System.err);
-		outThread = new StreamRedirectThread(	"output reader",
-												process.getInputStream(),
-												System.out);
-		errThread.setDaemon(true);
-		errThread.start();
-		outThread.setDaemon(true);
-		outThread.start();
+
+		if(out != null) {
+			Thread outThread = new StreamRedirectThread("output reader",
+														process.getInputStream(),
+														out);
+			outThread.setDaemon(true);
+			outThread.start();
+		}
+		
+		if(err != null) {
+			Thread errThread = new StreamRedirectThread("error reader",
+														process.getErrorStream(),
+														err);
+			errThread.setDaemon(true);
+			errThread.start();
+		}
 	}
 }
