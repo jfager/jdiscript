@@ -34,9 +34,6 @@
 
 package org.jdiscript.events;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.Event;
@@ -55,18 +52,15 @@ import com.sun.jdi.event.VMDisconnectEvent;
  */
 public class EventThread extends Thread {
 
-	private static final Logger log 
-		= LoggerFactory.getLogger(EventThread.class);
-
 	private final VirtualMachine vm; // Running VM
-	private final DebugEventHandler handler;
+	private final DebugEventDispatcher dispatcher;
 
 	public EventThread(	VirtualMachine vm,
-						DebugEventHandler handler )
+						DebugEventDispatcher dispatcher )
 	{
 		super("event-thread");
 		this.vm = vm;
-		this.handler = handler;
+		this.dispatcher = dispatcher;
 	}
 
 	/**
@@ -79,18 +73,11 @@ public class EventThread extends Thread {
 		while (true) {
 			try {
 				EventSet eventSet = queue.remove();
-				handler.startEventSet();
 				int suspendPolicy = eventSet.suspendPolicy();
-				handler.setSuspendPolicy(suspendPolicy);
-				if(handler.wantsEventSet()) {
-					handler.handleEventSet(eventSet);
-				} else {
-					EventIterator it = eventSet.eventIterator();
-					while (it.hasNext()) {
-						DebugEventDispatch.dispatch(it.nextEvent(), handler);
-					}
+				EventIterator it = eventSet.eventIterator();
+				while (it.hasNext()) {
+					dispatcher.dispatch(it.nextEvent(), suspendPolicy);
 				}
-				handler.endEventSet();
 				eventSet.resume();
 			} catch (InterruptedException exc) {
 				// Ignore
@@ -99,7 +86,6 @@ public class EventThread extends Thread {
 				break;
 			} 
 		}
-		log.info("EventThread complete");
 	}
 
 	/***
@@ -117,9 +103,9 @@ public class EventThread extends Thread {
 				while (iter.hasNext()) {
 					Event event = iter.nextEvent();
 					if (event instanceof VMDeathEvent) {
-						handler.vmDeath((VMDeathEvent) event);
+						dispatcher.dispatch(event, eventSet.suspendPolicy());
 					} else if (event instanceof VMDisconnectEvent) {
-						handler.vmDisconnect((VMDisconnectEvent) event);
+						dispatcher.dispatch(event, eventSet.suspendPolicy());
 						connected = false;
 					}
 				}

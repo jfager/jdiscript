@@ -40,9 +40,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * StreamRedirectThread is a thread which copies its input to its output and
  * terminates when it completes.
@@ -51,9 +48,6 @@ import org.slf4j.LoggerFactory;
  * @author Robert Field
  */
 class StreamRedirectThread extends Thread {
-	private static final Logger log 
-		= LoggerFactory.getLogger(StreamRedirectThread.class); 
-
 	private final BufferedReader in;
 	private final PrintStream out;
 
@@ -92,7 +86,7 @@ class StreamRedirectThread extends Thread {
 				}
 			}
 		} catch (IOException exc) {
-			log.error("Child I/O Transfer - " + exc);
+			exc.printStackTrace();
 		}
 	}
 }

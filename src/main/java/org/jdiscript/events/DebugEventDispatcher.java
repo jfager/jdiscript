@@ -1,5 +1,8 @@
 package org.jdiscript.events;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.sun.jdi.event.AccessWatchpointEvent;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
@@ -21,13 +24,51 @@ import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.event.VMStartEvent;
 import com.sun.jdi.event.WatchpointEvent;
+import com.sun.jdi.request.EventRequest;
 
-public class DebugEventDispatch {
 
+public class DebugEventDispatcher {
+	
+	private static List<DebugEventHandler> handlers 
+		= new ArrayList<DebugEventHandler>();
+
+	public void addHandler(DebugEventHandler handler) {
+		handlers.add(handler);
+	}
+	
 	/**
 	 * Dispatch incoming events
 	 */
-	public static void dispatch(Event event, DebugEventHandler handler) {
+	public void dispatch(Event event, int suspendPolicy) {
+		final EventRequest request = event.request();
+		if (request == null) {
+	    	for(DebugEventHandler handler: handlers) {
+	    		handler.notifySuspendPolicy(suspendPolicy);
+	    		//VM Events
+	    		if(event instanceof VMStartEvent) {
+		    		handler.vmStart((VMStartEvent)event);
+		        } else if(event instanceof VMDisconnectEvent) {
+		    		handler.vmDisconnect((VMDisconnectEvent)event);
+		    	} else if(event instanceof VMDeathEvent) {
+		    		handler.vmDeath((VMDeathEvent)event);
+		    	} else {
+		    		throw new RuntimeException(
+		    			"Event " + event + " missing EventRequest"
+		    		);
+		    	}
+	    	}
+	    	return;
+		}
+		
+		final DebugEventHandler handler = 
+			(DebugEventHandler)request.getProperty(DebugEventHandler.PROP_KEY);
+		
+		if(handler == null) {
+			throw new RuntimeException("No handler specified for event " + event);
+		}
+		
+		handler.notifySuspendPolicy(suspendPolicy);
+		
         if(event instanceof BreakpointEvent) {
             handler.breakpoint((BreakpointEvent)event);
         }

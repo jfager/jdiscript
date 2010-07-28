@@ -1,24 +1,20 @@
 package org.jdiscript.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.jdiscript.events.DebugEventHandler;
+import org.jdiscript.events.DebugEventDispatcher;
 import org.jdiscript.events.EventThread;
 
 import com.sun.jdi.VirtualMachine;
 
 public class DebugRunner {
-	private static final Logger log 
-		= LoggerFactory.getLogger(DebugRunner.class);
 	private Thread errThread;
 	private Thread outThread;
 	
 	private final VirtualMachine vm;
-	private final DebugEventHandler handler;
+	private final DebugEventDispatcher dispatcher;
 	
-	public DebugRunner(VirtualMachine vm, DebugEventHandler handler) {
+	public DebugRunner(VirtualMachine vm, DebugEventDispatcher dispatcher) {
 		this.vm = vm;
-		this.handler = handler;
+		this.dispatcher = dispatcher;
 	}
 	
 	public void run() {
@@ -27,12 +23,11 @@ public class DebugRunner {
 	
 	public void run(long millis) {
 		redirectOutput();
-		EventThread eventThread = new EventThread(vm, handler);
+		EventThread eventThread = new EventThread(vm, dispatcher);
 		eventThread.start();
 		
 		try {
 			eventThread.join(millis);
-			log.info("DebugRunner complete");
 		} catch(InterruptedException exc) {}		
 	}
 	

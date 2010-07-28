@@ -4,9 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.jdiscript.events.BaseDebugEventHandler;
+import org.jdiscript.events.DebugEventHandler;
 
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
@@ -33,10 +31,7 @@ import com.sun.jdi.request.ModificationWatchpointRequest;
 import com.sun.jdi.request.StepRequest;
 import com.sun.jdi.request.ThreadDeathRequest;
 
-public class TraceExampleHandler extends BaseDebugEventHandler {
-
-	private static final Logger log 
-		= LoggerFactory.getLogger(TraceExampleHandler.class);
+public class TraceExampleHandler extends DebugEventHandler {
 
 	private final VirtualMachine vm; // Running VM
 	private final String[] excludes; // Packages to exclude
@@ -116,7 +111,7 @@ public class TraceExampleHandler extends BaseDebugEventHandler {
 
 	@Override
 	public void vmStart(VMStartEvent event) {
-		log.info("-- VM Started --");
+		System.out.println("-- VM Started --");
 		setEventRequests(false);
 		try {
 			Thread.sleep(1 * 1000);
@@ -183,13 +178,13 @@ public class TraceExampleHandler extends BaseDebugEventHandler {
 	@Override
 	public void vmDeath(VMDeathEvent event) {
 		vmDied = true;
-		log.info("-- The application exited --");
+		System.out.println("-- The application exited --");
 	}
 
 	@Override
 	public void vmDisconnect(VMDisconnectEvent event) {
 		if (!vmDied) {
-			log.info("-- The application has been disconnected --");
+			System.out.println("-- The application has been disconnected --");
 		}
 	}
 
@@ -212,7 +207,7 @@ public class TraceExampleHandler extends BaseDebugEventHandler {
 		}
 
 		private void println(String str) {
-			log.info(indent + str);
+			System.out.println(indent + str);
 		}
 
 		void methodEntry(MethodEntryEvent event) {
