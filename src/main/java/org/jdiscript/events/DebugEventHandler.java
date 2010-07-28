@@ -49,8 +49,11 @@ import com.sun.jdi.request.ThreadStartRequest;
 import com.sun.jdi.request.VMDeathRequest;
 
 /**
- * For each method of DebugEventHandler, delegate to unhandledEvent(), which
- * throws an UnhandledEventException.  This class is intended to be subclassed.
+ * Each handler method for requested events delegates to unhandledEvent(), 
+ * which throws an UnhandledEventException.  Handler methods for unrequested
+ * events do nothing.  
+ * 
+ * This class is intended to be subclassed.
  *  
  * @author jfager
  */
@@ -139,15 +142,15 @@ public abstract class DebugEventHandler
 	}
 
 	public void vmDeath(VMDeathEvent e) {
-		unhandledEvent(e);
+		//do nothing
 	}
 
 	public void vmDisconnect(VMDisconnectEvent e) {
-		unhandledEvent(e);
+		//do nothing
 	}
 
 	public void vmStart(VMStartEvent e) {
-		unhandledEvent(e);
+		//do nothing
 	}
 
 	public void watchpoint(WatchpointEvent e) {
