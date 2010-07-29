@@ -29,7 +29,7 @@ import com.sun.jdi.request.EventRequest;
 
 public class DebugEventDispatcher {
 	
-	private static List<DebugEventHandler> handlers 
+	private List<DebugEventHandler> handlers 
 		= new ArrayList<DebugEventHandler>();
 
 	public void addHandler(DebugEventHandler handler) {
