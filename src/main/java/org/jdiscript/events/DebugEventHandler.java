@@ -61,10 +61,10 @@ public abstract class DebugEventHandler
 {
 	public static final String PROP_KEY = "HANDLER";
 	
-	private final VirtualMachine vm;
-	private final EventRequestManager erm;
-	
-	public DebugEventHandler(VirtualMachine vm) {
+	private VirtualMachine vm;
+	private EventRequestManager erm;
+
+	public void setVM(VirtualMachine vm) {
 		this.vm = vm;
 		this.erm = vm.eventRequestManager();
 	}
@@ -338,7 +338,7 @@ public abstract class DebugEventHandler
     	erm.deleteEventRequests(eventRequests);
     }
 
-    private <T extends EventRequest> List<T> filter(List<T> ers) {
+    public <T extends EventRequest> List<T> filter(List<T> ers) {
     	List<T> out = new ArrayList<T>();
     	for(T er: ers) {
     		if(er.getProperty(PROP_KEY) == this) {

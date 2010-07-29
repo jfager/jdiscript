@@ -10,7 +10,6 @@ import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
-import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.ExceptionEvent;
 import com.sun.jdi.event.MethodEntryEvent;
@@ -41,9 +40,9 @@ public class TraceExampleHandler extends DebugEventHandler {
 
 	private boolean vmDied = false;
 
-	public TraceExampleHandler(	final VirtualMachine vm )
+	public TraceExampleHandler()
 	{
-		super(vm);
+		super();
 		this.excludes = new String[0];
 	}
 

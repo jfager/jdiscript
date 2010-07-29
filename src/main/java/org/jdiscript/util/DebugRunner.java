@@ -28,6 +28,7 @@ public class DebugRunner {
 	}
 	
 	public void addHandler(DebugEventHandler handler) {
+		handler.setVM(vm);
 		dispatcher.addHandler(handler);
 	}
 	
