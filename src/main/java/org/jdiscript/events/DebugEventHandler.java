@@ -69,7 +69,7 @@ public abstract class DebugEventHandler
 		this.erm = vm.eventRequestManager();
 	}
 	
-	public VirtualMachine getVM() {
+	public VirtualMachine vm() {
 		return vm;
 	}
 	
