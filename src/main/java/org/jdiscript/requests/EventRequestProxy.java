@@ -28,6 +28,7 @@ public class EventRequestProxy implements InvocationHandler {
 	private EventRequestProxy(EventRequest request) {
 		this.proxiedRequest = request;
 		for(Method m: request.getClass().getMethods()) {
+			m.setAccessible(true);
 			methodCache.put(m.getName(), m);
 		}
 	}
@@ -39,7 +40,6 @@ public class EventRequestProxy implements InvocationHandler {
 		String name = method.getName();
 		Method m = methodCache.get(name);
 		if(m != null) {
-			m.setAccessible(true);
 			Object out = m.invoke(proxiedRequest, args);
 			if(out == null) {
 				return proxy;
