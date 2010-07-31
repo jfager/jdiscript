@@ -12,8 +12,7 @@ import com.sun.jdi.ReferenceType
 import com.sun.jdi.VirtualMachine 
 
 OPTIONS = """
-	-Dlog4j.configuration=file:/Users/Jason/java_shite/log4j.properties
-	-cp /Users/jason/projects/jdiscript/target/classes/
+	-cp ./target/classes/
 """
 MAIN = "org.jdiscript.example.HelloWorld"
 
@@ -21,8 +20,47 @@ VirtualMachine vm = new VMLauncher(OPTIONS, MAIN).start()
 JDIScript jdi = new JDIScript(vm)
 
 Stack stack = new Stack<Location>()
+
+//pre-declare handlers for a more natural definition order...		
+def start, constructors, breakpoint, methodExit
+
+start = {
+	vm.allClasses().each { constructors it }
+	jdi.classPrepareRequest()
+	   .addHandler({ constructors it.referenceType() } as OnClassPrepare)
+	   .enable()
+} as OnVMStart
+
+constructors = { ReferenceType refType ->
+	refType.methodsByName('<init>').each {
+		if(it.location().declaringType().name() != 'java.lang.Object') {
+			def br = jdi.breakpointRequest(it.location())
+						.addHandler(breakpoint)
+			            .putProperty('refType', refType)
+			if(refType.name().startsWith('org.jdiscript')) {
+				br.enable()
+			}
+		}
+	}
+}
+
+breakpoint = {
+	String prefix = '  ' * stack.size()
+	ReferenceType refType = it.request().getProperty('refType')
+	println prefix + 'new ' + refType.name()
+
+	stack.push it.location().method()
 		
-def methodExit = {
+	jdi.breakpointRequests(breakpoint).each { it.enable() }
+			
+	jdi.methodExitRequest()
+	   .putProperty('refType', refType)
+	   .addInstanceFilter( it.thread().frame(0).thisObject() )
+	   .addHandler(methodExit)
+	   .enable()
+} as OnBreakpoint
+
+methodExit = {
 	Method targetMethod = stack.peek()
 	Method eventMethod = it.method()
 	
@@ -30,7 +68,7 @@ def methodExit = {
 		jdi.deleteEventRequest( it.request() )
 		stack.pop()
 		if(stack.isEmpty()) {
-			jdi.breakpointRequests().each {
+			jdi.breakpointRequests(breakpoint).each {
 				if(!it.getProperty('refType').name().startsWith('org.jdiscript')) {
 					it.disable()
 				}
@@ -39,44 +77,8 @@ def methodExit = {
 	}
 } as OnMethodExit
 	
-def breakpoint = {
-	String prefix = '  ' * stack.size()
-	ReferenceType refType = it.request().getProperty('refType')
-	println prefix + 'new ' + refType.name()
-
-	stack.push it.location().method()
 		
-	jdi.breakpointRequests().each { it.enable() }
-			
-	jdi.methodExitRequest()
-	   .putProperty('refType', refType)
-	   .addInstanceFilter( it.thread().frame(0).thisObject() )
-	   .addHandler(methodExit)
-	   .enable()
-} as OnBreakpoint
-	
-def instrumentConstructors = { ReferenceType refType ->
-	refType.methodsByName('<init>').each {
-		if(it.location().declaringType().name() != 'java.lang.Object') {
-			def br = jdi.breakpointRequest(it.location())
-			            .putProperty('refType', refType)
-			if(refType.name().startsWith('org.jdiscript')) {
-				br.addHandler(breakpoint).enable()
-			}
-		}
-	}
-}
-
-def classPrepare = {
-	instrumentConstructors it.referenceType()
-} as OnClassPrepare
-	
-def onStart = {
-	vm.allClasses().each { instrumentConstructors it }
-	jdi.classPrepareRequest().addHandler(classPrepare).enable()
-} as OnVMStart
-		
-jdi.run(onStart) 
+jdi.run(start) 
 
 
 		

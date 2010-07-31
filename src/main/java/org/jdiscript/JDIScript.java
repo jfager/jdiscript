@@ -210,87 +210,88 @@ public class JDIScript {
     }
     
     // Convenience method for accessing only those EventRequests that are 
-    // associated with this handler
+    // associated with a given handler
 
-    public List<AccessWatchpointRequest> accessWatchpointRequests() {
-        return filter(erm.accessWatchpointRequests());
+    public List<AccessWatchpointRequest> accessWatchpointRequests(DebugEventHandler handler) {
+        return filter(erm.accessWatchpointRequests(), handler);
     }
     
-    public List<BreakpointRequest> breakpointRequests() {
-        return filter(erm.breakpointRequests());
+    public List<BreakpointRequest> breakpointRequests(DebugEventHandler handler) {
+        return filter(erm.breakpointRequests(), handler);
     }
     
-    public List<ClassPrepareRequest> classPrepareRequests() {
-        return filter(erm.classPrepareRequests());
+    public List<ClassPrepareRequest> classPrepareRequests(DebugEventHandler handler) {
+        return filter(erm.classPrepareRequests(), handler);
     }
     
-    public List<ClassUnloadRequest> classUnloadRequests() {
-        return filter(erm.classUnloadRequests());
+    public List<ClassUnloadRequest> classUnloadRequests(DebugEventHandler handler) {
+        return filter(erm.classUnloadRequests(), handler);
     }
     
-    public List<ExceptionRequest> exceptionRequests() {
-        return filter(erm.exceptionRequests());
+    public List<ExceptionRequest> exceptionRequests(DebugEventHandler handler) {
+        return filter(erm.exceptionRequests(), handler);
     }
     
-    public List<MethodEntryRequest> methodEntryRequests() {
-        return filter(erm.methodEntryRequests());
+    public List<MethodEntryRequest> methodEntryRequests(DebugEventHandler handler) {
+        return filter(erm.methodEntryRequests(), handler);
     }
     
-    public List<MethodExitRequest> methodExitRequests() {
-        return filter(erm.methodExitRequests());
+    public List<MethodExitRequest> methodExitRequests(DebugEventHandler handler) {
+        return filter(erm.methodExitRequests(), handler);
     }
     
-    public List<ModificationWatchpointRequest> modificationWatchpointRequests() {
-        return filter(erm.modificationWatchpointRequests());
+    public List<ModificationWatchpointRequest> modificationWatchpointRequests(DebugEventHandler handler) {
+        return filter(erm.modificationWatchpointRequests(), handler);
     }
     
-    public List<MonitorContendedEnteredRequest> monitorContendedEnteredRequests() {
-        return filter(erm.monitorContendedEnteredRequests());
+    public List<MonitorContendedEnteredRequest> monitorContendedEnteredRequests(DebugEventHandler handler) {
+        return filter(erm.monitorContendedEnteredRequests(), handler);
     }
     
-    public List<MonitorContendedEnterRequest> monitorContendedEnterRequests() {
-        return filter(erm.monitorContendedEnterRequests());
+    public List<MonitorContendedEnterRequest> monitorContendedEnterRequests(DebugEventHandler handler) {
+        return filter(erm.monitorContendedEnterRequests(), handler);
     }
     
-    public List<MonitorWaitedRequest> monitorWaitedRequests() {
-        return filter(erm.monitorWaitedRequests());
+    public List<MonitorWaitedRequest> monitorWaitedRequests(DebugEventHandler handler) {
+        return filter(erm.monitorWaitedRequests(), handler);
     }
     
-    public List<MonitorWaitRequest> monitorWaitRequests() {
-        return filter(erm.monitorWaitRequests());
+    public List<MonitorWaitRequest> monitorWaitRequests(DebugEventHandler handler) {
+        return filter(erm.monitorWaitRequests(), handler);
     }
     
-    public List<StepRequest> stepRequests() {
-        return filter(erm.stepRequests());
+    public List<StepRequest> stepRequests(DebugEventHandler handler) {
+        return filter(erm.stepRequests(), handler);
     }
     
-    public List<ThreadDeathRequest> threadDeathRequests() {
-        return filter(erm.threadDeathRequests());
+    public List<ThreadDeathRequest> threadDeathRequests(DebugEventHandler handler) {
+        return filter(erm.threadDeathRequests(), handler);
     }
     
-    public List<ThreadStartRequest> threadStartRequests() {
-        return filter(erm.threadStartRequests());
+    public List<ThreadStartRequest> threadStartRequests(DebugEventHandler handler) {
+        return filter(erm.threadStartRequests(), handler);
     }
     
-    public List<VMDeathRequest> vmDeathRequests() {
-        return filter(erm.vmDeathRequests());
+    public List<VMDeathRequest> vmDeathRequests(DebugEventHandler handler) {
+        return filter(erm.vmDeathRequests(), handler);
     }
 
+    public <T extends EventRequest> List<T> filter(List<T> ers, DebugEventHandler handler) {
+    	List<T> out = new ArrayList<T>();
+    	for(T er: ers) {
+    		Set<DebugEventHandler> handlers = getHandlers(er);
+    		if(handlers.contains(handler)) {
+    			out.add(er);
+    		}
+    	}
+    	return out;
+    }
+    
     public void deleteEventRequest(EventRequest eventRequest) {
     	erm.deleteEventRequest(eventRequest);
     }
     
     public void deleteEventRequests(List<? extends EventRequest> eventRequests) {
     	erm.deleteEventRequests(eventRequests);
-    }
-
-    public <T extends EventRequest> List<T> filter(List<T> ers) {
-    	List<T> out = new ArrayList<T>();
-    	for(T er: ers) {
-    		if(er.getProperty(PROP_KEY) == this) {
-    			out.add(er);
-    		}
-    	}
-    	return out;
     }
 }
