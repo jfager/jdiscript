@@ -47,9 +47,8 @@ public class EventRequestProxy implements InvocationHandler {
 				return out;
 			}
 		} else if (name.equals("addHandler")) {
-			@SuppressWarnings("unchecked")
 			Set<DebugEventHandler> handlers 
-				= (Set<DebugEventHandler>)proxiedRequest.getProperty(JDIScript.PROP_KEY);
+				= JDIScript.getHandlers(proxiedRequest);
 			if(handlers == null) {
 				handlers = new HashSet<DebugEventHandler>();
 				proxiedRequest.putProperty(JDIScript.PROP_KEY, handlers);
