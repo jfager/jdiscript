@@ -1,16 +1,12 @@
 package org.jdiscript
 
-import org.jdiscript.util.DebugRunner
 import org.jdiscript.example.TraceExampleHandler
 import com.sun.jdi.VirtualMachine
 
-public class TomcatTrace {
-	
-	static void main(args) {
-		VirtualMachine vm = TomcatStarter.vm() 
-		new DebugRunner(vm, new TraceExampleHandler(vm)).run(10 * 1000)
+VirtualMachine vm = TomcatStarter.vm() 
+JDIScript jdi = new JDIScript(vm)
+jdi.run(new TraceExampleHandler(jdi), 10 * 1000)
 		
-		println "Shutting down"
-		vm.process().destroy()
-	}
-}
+println "Shutting down"
+vm.process().destroy()
+

@@ -1,6 +1,6 @@
 package org.jdiscript
 
-import org.jdiscript.util.VMStarter;
+import org.jdiscript.util.VMLauncher;
 import com.sun.jdi.VirtualMachine;
 
 
@@ -18,6 +18,6 @@ class TomcatStarter {
 	static final String MAIN = "org.apache.catalina.startup.Bootstrap"
 	
 	static VirtualMachine vm() {
-		return new VMStarter(OPTIONS, MAIN).start() 
+		return new VMLauncher(OPTIONS, MAIN).start() 
 	}
 }

@@ -4,7 +4,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jdiscript.events.DebugEventHandler;
+import org.jdiscript.JDIScript;
+import org.jdiscript.handlers.BaseEventHandler;
+import org.jdiscript.requests.ChainingClassPrepareRequest;
+import org.jdiscript.requests.ChainingMethodEntryRequest;
+import org.jdiscript.requests.ChainingMethodExitRequest;
+import org.jdiscript.requests.ChainingModificationWatchpointRequest;
 
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
@@ -20,16 +25,10 @@ import com.sun.jdi.event.ThreadDeathEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.event.VMStartEvent;
-import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequest;
-import com.sun.jdi.request.ExceptionRequest;
-import com.sun.jdi.request.MethodEntryRequest;
-import com.sun.jdi.request.MethodExitRequest;
-import com.sun.jdi.request.ModificationWatchpointRequest;
 import com.sun.jdi.request.StepRequest;
-import com.sun.jdi.request.ThreadDeathRequest;
 
-public class TraceExampleHandler extends DebugEventHandler {
+public class TraceExampleHandler extends BaseEventHandler {
 
 	private final String[] excludes; // Packages to exclude
 
@@ -39,10 +38,13 @@ public class TraceExampleHandler extends DebugEventHandler {
 	static String nextBaseIndent = ""; // Starting indent for next thread
 
 	private boolean vmDied = false;
+	
+	private final JDIScript jdi;
 
-	public TraceExampleHandler()
+	public TraceExampleHandler(JDIScript jdi)
 	{
 		super();
+		this.jdi = jdi;
 		this.excludes = new String[0];
 	}
 
@@ -58,37 +60,42 @@ public class TraceExampleHandler extends DebugEventHandler {
 	void setEventRequests(boolean watchFields) {
 
 		// want all exceptions
-		ExceptionRequest excReq = exceptionRequest(null, true, true);
-		// suspend so we can step
-		excReq.setSuspendPolicy(EventRequest.SUSPEND_ALL);
-		excReq.enable();
+		jdi.exceptionRequest(null, true, true)
+		   .addHandler(this)
+		   .setSuspendPolicy(EventRequest.SUSPEND_ALL)
+		   .enable();
 
-		MethodEntryRequest menr = methodEntryRequest();
+		ChainingMethodEntryRequest menr = jdi.methodEntryRequest();
 		for (int i = 0; i < excludes.length; ++i) {
 			menr.addClassExclusionFilter(excludes[i]);
 		}
-		menr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
-		menr.enable();
+		
+		menr.setSuspendPolicy(EventRequest.SUSPEND_NONE)
+		    .addHandler(this)
+			.enable();
 
-		MethodExitRequest mexr = methodExitRequest();
+		ChainingMethodExitRequest mexr = jdi.methodExitRequest();
 		for (int i = 0; i < excludes.length; ++i) {
 			mexr.addClassExclusionFilter(excludes[i]);
 		}
-		mexr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
-		mexr.enable();
+		mexr.setSuspendPolicy(EventRequest.SUSPEND_NONE)
+			.addHandler(this)
+			.enable();
 
-		ThreadDeathRequest tdr = threadDeathRequest();
-		// Make sure we sync on thread death
-		tdr.setSuspendPolicy(EventRequest.SUSPEND_ALL);
-		tdr.enable();
+		jdi.threadDeathRequest()
+		   .addHandler(this)
+		   // Make sure we sync on thread death
+		   .setSuspendPolicy(EventRequest.SUSPEND_ALL)
+		   .enable();
 
 		if (watchFields) {
-			ClassPrepareRequest cpr = classPrepareRequest();
+			ChainingClassPrepareRequest cpr = jdi.classPrepareRequest();
 			for (int i = 0; i < excludes.length; ++i) {
 				cpr.addClassExclusionFilter(excludes[i]);
 			}
-			cpr.setSuspendPolicy(EventRequest.SUSPEND_ALL);
-			cpr.enable();
+			cpr.setSuspendPolicy(EventRequest.SUSPEND_ALL)
+			   .addHandler(this)
+			   .enable();
 		}
 	}
 
@@ -106,7 +113,7 @@ public class TraceExampleHandler extends DebugEventHandler {
 	}
 
 	@Override
-	public void vmStart(VMStartEvent event) {
+	public void exec(VMStartEvent event) {
 		System.out.println("-- VM Started --");
 		setEventRequests(false);
 		try {
@@ -116,32 +123,32 @@ public class TraceExampleHandler extends DebugEventHandler {
 
 	// Forward event for thread specific processing
 	@Override
-	public void methodEntry(MethodEntryEvent event) {
-		threadTrace(event.thread()).methodEntry(event);
+	public void exec(MethodEntryEvent event) {
+		threadTrace(event.thread()).exec(event);
 	}
 
 	// Forward event for thread specific processing
 	@Override
-	public void methodExit(MethodExitEvent event) {
-		threadTrace(event.thread()).methodExit(event);
+	public void exec(MethodExitEvent event) {
+		threadTrace(event.thread()).exec(event);
 	}
 
 	// Forward event for thread specific processing
 	@Override
-	public void step(StepEvent event) {
-		threadTrace(event.thread()).step(event);
+	public void exec(StepEvent event) {
+		threadTrace(event.thread()).exec(event);
 	}
 
 	// Forward event for thread specific processing
 	public void fieldWatch(ModificationWatchpointEvent event) {
-		threadTrace(event.thread()).fieldWatch(event);
+		threadTrace(event.thread()).exec(event);
 	}
 
 	@Override
-	public void threadDeath(ThreadDeathEvent event) {
+	public void exec(ThreadDeathEvent event) {
 		ThreadTrace trace = traceMap.get(event.thread());
 		if (trace != null) { // only want threads we care about
-			trace.threadDeath(event); // Forward event
+			trace.exec(event); // Forward event
 		}
 	}
 
@@ -149,35 +156,36 @@ public class TraceExampleHandler extends DebugEventHandler {
 	 * A new class has been loaded. Set watchpoints on each of its fields
 	 */
 	@Override
-	public void classPrepare(ClassPrepareEvent event) {
+	public void exec(ClassPrepareEvent event) {
 		List<Field> fields = event.referenceType().visibleFields();
 		for (Field field : fields) {
-			ModificationWatchpointRequest req
-				= modificationWatchpointRequest(field);
+			ChainingModificationWatchpointRequest req
+				= jdi.modificationWatchpointRequest(field);
 			for (int i = 0; i < excludes.length; ++i) {
 				req.addClassExclusionFilter(excludes[i]);
 			}
-			req.setSuspendPolicy(EventRequest.SUSPEND_NONE);
-			req.enable();
+			req.setSuspendPolicy(EventRequest.SUSPEND_NONE)
+			   .addHandler(this)
+			   .enable();
 		}
 	}
 
 	@Override
-	public void exception(ExceptionEvent event) {
+	public void exec(ExceptionEvent event) {
 		ThreadTrace trace = traceMap.get(event.thread());
 		if (trace != null) { // only want threads we care about
-			trace.exception(event); // Forward event
+			trace.exec(event); // Forward event
 		}
 	}
 
 	@Override
-	public void vmDeath(VMDeathEvent event) {
+	public void exec(VMDeathEvent event) {
 		vmDied = true;
 		System.out.println("-- The application exited --");
 	}
 
 	@Override
-	public void vmDisconnect(VMDisconnectEvent event) {
+	public void exec(VMDisconnectEvent event) {
 		if (!vmDied) {
 			System.out.println("-- The application has been disconnected --");
 		}
@@ -187,7 +195,7 @@ public class TraceExampleHandler extends DebugEventHandler {
 	 * This class keeps context on events in one thread. In this implementation,
 	 * context is the indentation prefix.
 	 */
-	class ThreadTrace {
+	class ThreadTrace extends BaseEventHandler {
 		final ThreadReference thread;
 		final String baseIndent;
 		static final String threadDelta = "                     ";
@@ -205,36 +213,41 @@ public class TraceExampleHandler extends DebugEventHandler {
 			System.out.println(indent + str);
 		}
 
-		void methodEntry(MethodEntryEvent event) {
+		@Override
+		public void exec(MethodEntryEvent event) {
 			println(event.method().name() + "  --  "
 					+ event.method().declaringType().name());
 			indent.append("| ");
 		}
 
-		void methodExit(MethodExitEvent event) {
+		@Override
+		public void exec(MethodExitEvent event) {
 			indent.setLength(indent.length() - 2);
 		}
 
-		void fieldWatch(ModificationWatchpointEvent event) {
+		@Override
+		public void exec(ModificationWatchpointEvent event) {
 			Field field = event.field();
 			Value value = event.valueToBe();
 			println("    " + field.name() + " = " + value);
 		}
 
-		void exception(ExceptionEvent event) {
+		@Override
+		public void exec(ExceptionEvent event) {
 			println("Exception: " + event.exception() + " catch: "
 					+ event.catchLocation());
 
 			// Step to the catch
-			StepRequest req = stepRequest(thread,
-					StepRequest.STEP_MIN, StepRequest.STEP_INTO);
-			req.addCountFilter(1); // next step only
-			req.setSuspendPolicy(EventRequest.SUSPEND_ALL);
-			req.enable();
+			jdi.stepRequest(thread, StepRequest.STEP_MIN, StepRequest.STEP_INTO)
+			   .addCountFilter(1) // next step only
+			   .setSuspendPolicy(EventRequest.SUSPEND_ALL)
+			   .addHandler(this)
+			   .enable();
 		}
 
 		// Step to exception catch
-		void step(StepEvent event) {
+		@Override
+		public void exec(StepEvent event) {
 			// Adjust call depth
 			int cnt = 0;
 			indent = new StringBuffer(baseIndent);
@@ -246,10 +259,11 @@ public class TraceExampleHandler extends DebugEventHandler {
 				indent.append("| ");
 			}
 
-			deleteEventRequest(event.request());
+			jdi.deleteEventRequest(event.request());
 		}
 
-		void threadDeath(ThreadDeathEvent event) {
+		@Override
+		public void exec(ThreadDeathEvent event) {
 			indent = new StringBuffer(baseIndent);
 			println("====== " + thread.name() + " end ======");
 		}

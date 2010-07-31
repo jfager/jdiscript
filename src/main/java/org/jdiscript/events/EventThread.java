@@ -58,7 +58,7 @@ public class EventThread extends Thread {
 	public EventThread(	VirtualMachine vm,
 						DebugEventDispatcher dispatcher )
 	{
-		super("event-thread");
+		super("jdiscript-event-thread");
 		this.vm = vm;
 		this.dispatcher = dispatcher;
 	}
@@ -76,7 +76,7 @@ public class EventThread extends Thread {
 				int suspendPolicy = eventSet.suspendPolicy();
 				EventIterator it = eventSet.eventIterator();
 				while (it.hasNext()) {
-					dispatcher.dispatch(it.nextEvent(), suspendPolicy);
+					dispatcher.dispatch(vm, it.nextEvent(), suspendPolicy);
 				}
 				eventSet.resume();
 			} catch (InterruptedException exc) {
@@ -88,7 +88,7 @@ public class EventThread extends Thread {
 		}
 	}
 
-	/***
+	/**
 	 * A VMDisconnectedException has happened while dealing with another event.
 	 * We need to flush the event queue, dealing only with exit events (VMDeath,
 	 * VMDisconnect) so that we terminate correctly.
@@ -103,9 +103,9 @@ public class EventThread extends Thread {
 				while (iter.hasNext()) {
 					Event event = iter.nextEvent();
 					if (event instanceof VMDeathEvent) {
-						dispatcher.dispatch(event, eventSet.suspendPolicy());
+						dispatcher.dispatch(vm, event, eventSet.suspendPolicy());
 					} else if (event instanceof VMDisconnectEvent) {
-						dispatcher.dispatch(event, eventSet.suspendPolicy());
+						dispatcher.dispatch(vm, event, eventSet.suspendPolicy());
 						connected = false;
 					}
 				}

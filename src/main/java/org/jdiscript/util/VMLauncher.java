@@ -1,19 +1,21 @@
 package org.jdiscript.util;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Map;
 
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.VirtualMachineManager;
+import com.sun.jdi.connect.Connector.Argument;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 import com.sun.jdi.connect.LaunchingConnector;
 import com.sun.jdi.connect.VMStartException;
-import com.sun.jdi.connect.Connector.Argument;
 
-public class VMStarter {
+public class VMLauncher {
 	private final String options, main;
 	private final boolean killOnShutdown;
+	private final OutputStream out, err;
 	
 	/**
 	 * Create a VMStarter that uses the given options and main class to launch 
@@ -24,8 +26,8 @@ public class VMStarter {
 	 * @param options
 	 * @param main
 	 */
-	public VMStarter(String options, String main) {
-		this(options, main, true);
+	public VMLauncher(String options, String main) {
+		this(options, main, true, System.out, System.err);
 	}
 
 	/**
@@ -37,10 +39,14 @@ public class VMStarter {
 	 * @param main
 	 * @param killOnShutdown
 	 */
-	public VMStarter(String options, String main, boolean killOnShutdown) {
+	public VMLauncher(String options, String main, boolean killOnShutdown, 
+					  OutputStream out, OutputStream err) 
+	{
 		this.options = options;
 		this.main = main;
 		this.killOnShutdown = killOnShutdown;
+		this.out = out;
+		this.err = err;
 	}
 	
 	public VirtualMachine start() 
@@ -53,12 +59,29 @@ public class VMStarter {
 		Map<String, Argument> cArgs = connector.defaultArguments();
 		cArgs.get("options").setValue(options);
 		cArgs.get("main").setValue(main);
-		final VirtualMachine out = connector.launch(cArgs);
+		final VirtualMachine vm = connector.launch(cArgs);
+		redirectOutput(vm);
 		if(killOnShutdown) {
 			Runtime.getRuntime().addShutdownHook(new Thread() {
-				public void run() { out.process().destroy(); }
+				public void run() { vm.process().destroy(); }
 			});
 		}
-		return out;
+		return vm;
+	}
+	
+	private void redirectOutput(VirtualMachine vm) {
+		Process process = vm.process();
+
+		Thread outThread = new StreamRedirectThread("output reader",
+													process.getInputStream(),
+													out);
+		outThread.setDaemon(true);
+		outThread.start();
+		
+		Thread errThread = new StreamRedirectThread("error reader",
+													process.getErrorStream(),
+													err);
+		errThread.setDaemon(true);
+		errThread.start();
 	}	
 }

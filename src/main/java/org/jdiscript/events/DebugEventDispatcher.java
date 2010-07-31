@@ -1,8 +1,34 @@
 package org.jdiscript.events;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
+import org.jdiscript.JDIScript;
+import org.jdiscript.handlers.DebugEventHandler;
+import org.jdiscript.handlers.OnAccessWatchpoint;
+import org.jdiscript.handlers.OnBreakpoint;
+import org.jdiscript.handlers.OnClassPrepare;
+import org.jdiscript.handlers.OnClassUnload;
+import org.jdiscript.handlers.OnException;
+import org.jdiscript.handlers.OnLocatable;
+import org.jdiscript.handlers.OnMethodEntry;
+import org.jdiscript.handlers.OnMethodExit;
+import org.jdiscript.handlers.OnModificationWatchpoint;
+import org.jdiscript.handlers.OnMonitorContendedEnter;
+import org.jdiscript.handlers.OnMonitorContendedEntered;
+import org.jdiscript.handlers.OnMonitorWait;
+import org.jdiscript.handlers.OnMonitorWaited;
+import org.jdiscript.handlers.OnStep;
+import org.jdiscript.handlers.OnThreadDeath;
+import org.jdiscript.handlers.OnThreadStart;
+import org.jdiscript.handlers.OnVMDeath;
+import org.jdiscript.handlers.OnVMDisconnect;
+import org.jdiscript.handlers.OnVMStart;
+import org.jdiscript.handlers.OnWatchpoint;
+
+import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.AccessWatchpointEvent;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
@@ -36,106 +62,108 @@ public class DebugEventDispatcher {
 		handlers.add(handler);
 	}
 	
+	public void addHandlers(Collection<DebugEventHandler> handlers) {
+		this.handlers.addAll(handlers);
+	}
+	
 	/**
 	 * Dispatch incoming events
 	 */
-	public void dispatch(Event event, int suspendPolicy) {
+	public void dispatch(VirtualMachine vm, Event event, int suspendPolicy) {
 		final EventRequest request = event.request();
 		if (request == null) {
 	    	for(DebugEventHandler handler: handlers) {
-	    		handler.notifySuspendPolicy(suspendPolicy);
+	    		//handler.notifySuspendPolicy(suspendPolicy);
 	    		//VM Events
-	    		if(event instanceof VMStartEvent) {
-		    		handler.vmStart((VMStartEvent)event);
-		        } else if(event instanceof VMDisconnectEvent) {
-		    		handler.vmDisconnect((VMDisconnectEvent)event);
-		    	} else if(event instanceof VMDeathEvent) {
-		    		handler.vmDeath((VMDeathEvent)event);
-		    	} else {
-		    		throw new RuntimeException(
-		    			"Event " + event + " missing EventRequest"
-		    		);
-		    	}
+	    		if(event instanceof VMStartEvent && 
+	    		   handler instanceof OnVMStart) {
+		    		((OnVMStart)handler).exec((VMStartEvent)event);
+		        } else if(event instanceof VMDisconnectEvent &&
+		        		  handler instanceof OnVMDisconnect) {
+		    		((OnVMDisconnect)handler).exec((VMDisconnectEvent)event);
+		    	} else if(event instanceof VMDeathEvent &&
+		    			  handler instanceof OnVMDeath) {
+		    		((OnVMDeath)handler).exec((VMDeathEvent)event);
+		    	} 
 	    	}
 	    	return;
 		}
 		
-		final DebugEventHandler handler = 
-			(DebugEventHandler)request.getProperty(DebugEventHandler.PROP_KEY);
+		final Set<DebugEventHandler> handlers = JDIScript.getHandlers(request);
 		
-		if(handler == null) {
-			throw new RuntimeException("No handler specified for event " + event);
+		if(handlers == null) {
+			throw new RuntimeException("No handlers specified for event " + event);
 		}
 		
-		handler.notifySuspendPolicy(suspendPolicy);
-		
-        if(event instanceof BreakpointEvent) {
-            handler.breakpoint((BreakpointEvent)event);
-        }
-
-        else if(event instanceof StepEvent) {
-            handler.step((StepEvent)event);
-        }
-
-        else if(event instanceof ExceptionEvent) {
-            handler.exception((ExceptionEvent)event);
-        }
-
-        //Method Events
-        else if(event instanceof MethodEntryEvent) {
-            handler.methodEntry((MethodEntryEvent)event);
-        } else if(event instanceof MethodExitEvent) {
-            handler.methodExit((MethodExitEvent)event);
-        }
-
-        //Monitor Events
-        else if(event instanceof MonitorWaitEvent) {
-            handler.monitorWait((MonitorWaitEvent)event);
-        } else if(event instanceof MonitorWaitedEvent) {
-            handler.monitorWaited((MonitorWaitedEvent)event);
-        } else if(event instanceof MonitorContendedEnterEvent) {
-            handler.monitorContendedEnter((MonitorContendedEnterEvent)event);
-        } else if(event instanceof MonitorContendedEnteredEvent) {
-            handler.monitorContendedEntered((MonitorContendedEnteredEvent)event);
-        }
-
-        //Watchpoint Events
-        else if(event instanceof AccessWatchpointEvent) {
-        	handler.accessWatchpoint((AccessWatchpointEvent)event);
-        } else if(event instanceof ModificationWatchpointEvent) {
-            handler.modificationWatchpoint((ModificationWatchpointEvent)event);
-        }
-
-		//Threading Events
-        else if(event instanceof ThreadStartEvent) {
-            handler.threadStart((ThreadStartEvent)event);
-        } else if(event instanceof ThreadDeathEvent) {
-            handler.threadDeath((ThreadDeathEvent)event);
-        }
-
-		//Class Events
-        else if(event instanceof ClassPrepareEvent) {
-            handler.classPrepare((ClassPrepareEvent)event);
-        } else if(event instanceof ClassUnloadEvent) {
-            handler.classUnload((ClassUnloadEvent)event);
-        }
-
-		//VM Events
-        else if(event instanceof VMStartEvent) {
-            handler.vmStart((VMStartEvent)event);
-        } else if(event instanceof VMDisconnectEvent) {
-            handler.vmDisconnect((VMDisconnectEvent)event);
-        } else if(event instanceof VMDeathEvent) {
-            handler.vmDeath((VMDeathEvent)event);
-        }
-
-        //Catchalls
-        else if(event instanceof WatchpointEvent) {
-            handler.watchpoint((WatchpointEvent)event);
-        } else if(event instanceof LocatableEvent) {
-            handler.locatable((LocatableEvent)event);
-        } else {
-			throw new Error("Unexpected event type");
+		for(DebugEventHandler handler: handlers) {
+	        if(event instanceof BreakpointEvent) {
+	            ((OnBreakpoint)handler).exec((BreakpointEvent)event);
+	        }
+	
+	        else if(event instanceof StepEvent) {
+	            ((OnStep)handler).exec((StepEvent)event);
+	        }
+	
+	        else if(event instanceof ExceptionEvent) {
+	            ((OnException)handler).exec((ExceptionEvent)event);
+	        }
+	
+	        //Method Events
+	        else if(event instanceof MethodEntryEvent) {
+	            ((OnMethodEntry)handler).exec((MethodEntryEvent)event);
+	        } else if(event instanceof MethodExitEvent) {
+	            ((OnMethodExit)handler).exec((MethodExitEvent)event);
+	        }
+	
+	        //Monitor Events
+	        else if(event instanceof MonitorWaitEvent) {
+	            ((OnMonitorWait)handler).exec((MonitorWaitEvent)event);
+	        } else if(event instanceof MonitorWaitedEvent) {
+	            ((OnMonitorWaited)handler).exec((MonitorWaitedEvent)event);
+	        } else if(event instanceof MonitorContendedEnterEvent) {
+	            ((OnMonitorContendedEnter)handler).exec((MonitorContendedEnterEvent)event);
+	        } else if(event instanceof MonitorContendedEnteredEvent) {
+	            ((OnMonitorContendedEntered)handler).exec((MonitorContendedEnteredEvent)event);
+	        }
+	
+	        //Watchpoint Events
+	        else if(event instanceof AccessWatchpointEvent) {
+	        	((OnAccessWatchpoint)handler).exec((AccessWatchpointEvent)event);
+	        } else if(event instanceof ModificationWatchpointEvent) {
+	            ((OnModificationWatchpoint)handler).exec((ModificationWatchpointEvent)event);
+	        }
+	
+			//Threading Events
+	        else if(event instanceof ThreadStartEvent) {
+	            ((OnThreadStart)handler).exec((ThreadStartEvent)event);
+	        } else if(event instanceof ThreadDeathEvent) {
+	            ((OnThreadDeath)handler).exec((ThreadDeathEvent)event);
+	        }
+	
+			//Class Events
+	        else if(event instanceof ClassPrepareEvent) {
+	            ((OnClassPrepare)handler).exec((ClassPrepareEvent)event);
+	        } else if(event instanceof ClassUnloadEvent) {
+	            ((OnClassUnload)handler).exec((ClassUnloadEvent)event);
+	        }
+	
+			//VM Events
+	        else if(event instanceof VMStartEvent) {
+	            ((OnVMStart)handler).exec((VMStartEvent)event);
+	        } else if(event instanceof VMDisconnectEvent) {
+	            ((OnVMDisconnect)handler).exec((VMDisconnectEvent)event);
+	        } else if(event instanceof VMDeathEvent) {
+	            ((OnVMDeath)handler).exec((VMDeathEvent)event);
+	        }
+	
+	        //Catchalls
+	        else if(event instanceof WatchpointEvent) {
+	            ((OnWatchpoint)handler).exec((WatchpointEvent)event);
+	        } else if(event instanceof LocatableEvent) {
+	            ((OnLocatable)handler).exec((LocatableEvent)event);
+	        } else {
+				throw new Error("Unexpected event type");
+			}
 		}
 	}
 }

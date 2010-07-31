@@ -16,15 +16,22 @@ public class HelloWorld {
 		return "Hello, " + helloTo;
 	}
 	
+	public void setHelloTo(String helloTo) {
+		this.helloTo = helloTo;
+	}
+	
 	public static void main(String[] args) {
 		HelloWorld hello;
 		
 		hello = new HelloWorld();
 		System.out.println(hello.sayHello());
-		
-		hello = new HelloWorld("Barry");
 		System.out.println(hello.sayHello());
-		
+		hello.setHelloTo("Barney");
+		System.out.println(hello.sayHello());
+		System.out.println(hello.sayHello());
+
+		hello = new HelloWorld("Fred");
+		System.out.println(hello.sayHello());
 		System.out.println(hello.sayHello());
 	}
 }
