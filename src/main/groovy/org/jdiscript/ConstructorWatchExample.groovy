@@ -21,9 +21,6 @@ JDIScript jdi = new JDIScript(vm)
 
 Stack stack = new Stack<Location>()
 
-//pre-declare handlers for a more natural definition order...		
-def start, constructors, breakpoint, methodExit
-
 start = {
 	vm.allClasses().each { constructors it }
 	jdi.classPrepareRequest()
@@ -36,7 +33,6 @@ constructors = { ReferenceType refType ->
 		if(it.location().declaringType().name() != 'java.lang.Object') {
 			def br = jdi.breakpointRequest(it.location())
 						.addHandler(breakpoint)
-			            .putProperty('refType', refType)
 			if(refType.name().startsWith('org.jdiscript')) {
 				br.enable()
 			}
@@ -46,7 +42,7 @@ constructors = { ReferenceType refType ->
 
 breakpoint = {
 	String prefix = '  ' * stack.size()
-	ReferenceType refType = it.request().getProperty('refType')
+	ReferenceType refType = it.location().declaringType()
 	println prefix + 'new ' + refType.name()
 
 	stack.push it.location().method()
@@ -54,7 +50,6 @@ breakpoint = {
 	jdi.breakpointRequests(breakpoint).each { it.enable() }
 			
 	jdi.methodExitRequest()
-	   .putProperty('refType', refType)
 	   .addInstanceFilter( it.thread().frame(0).thisObject() )
 	   .addHandler(methodExit)
 	   .enable()
@@ -69,7 +64,7 @@ methodExit = {
 		stack.pop()
 		if(stack.isEmpty()) {
 			jdi.breakpointRequests(breakpoint).each {
-				if(!it.getProperty('refType').name().startsWith('org.jdiscript')) {
+				if(!it.location().declaringType().name().startsWith('org.jdiscript')) {
 					it.disable()
 				}
 			}
