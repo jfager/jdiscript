@@ -11,6 +11,7 @@ import org.jdiscript.handlers.OnAccessWatchpoint;
 import org.jdiscript.handlers.OnBreakpoint;
 import org.jdiscript.handlers.OnClassPrepare;
 import org.jdiscript.handlers.OnClassUnload;
+import org.jdiscript.handlers.OnEvent;
 import org.jdiscript.handlers.OnException;
 import org.jdiscript.handlers.OnLocatable;
 import org.jdiscript.handlers.OnMethodEntry;
@@ -162,7 +163,7 @@ public class DebugEventDispatcher {
 	        } else if(event instanceof LocatableEvent) {
 	            ((OnLocatable)handler).exec((LocatableEvent)event);
 	        } else {
-				throw new Error("Unexpected event type");
+				((OnEvent)handler).exec(event);
 			}
 		}
 	}
