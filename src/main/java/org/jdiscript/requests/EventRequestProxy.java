@@ -52,8 +52,16 @@ public class EventRequestProxy implements InvocationHandler {
 			if(handlers == null) {
 				handlers = new HashSet<DebugEventHandler>();
 				proxiedRequest.putProperty(JDIScript.PROP_KEY, handlers);
-			}			
-			DebugEventHandler handler = (DebugEventHandler)args[0];
+			}
+			Object handlerObj = args[0];
+			DebugEventHandler handler = null;
+			if(handlerObj instanceof DebugEventHandler) {
+				handler = (DebugEventHandler)handlerObj;
+			} else {
+				//TODO: handler = new ReflectionHandler(handlerObj);
+				throw new RuntimeException("Can't yet handle non-DebugEventHandlers");
+			}
+				
 			handlers.add(handler);
 			return proxy;
 		} else {
