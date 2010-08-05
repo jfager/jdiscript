@@ -9,11 +9,7 @@ JDIScript j = new JDIScript(vm)
 
 def contendedEnter = {
 	long timestamp = System.currentTimeMillis()
-	ThreadReference tref = it.thread()
-	ObjectReference mref = it.monitor()
-	
 	println "${timestamp}: Contended enter for ${it.monitor()} by ${it.thread()}"
-	
 	it.thread().frames().each { println "   " + it }
 } as OnMonitorContendedEnter
 
