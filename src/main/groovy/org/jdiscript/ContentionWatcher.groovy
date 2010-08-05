@@ -1,14 +1,8 @@
 package org.jdiscript
 
-import org.jdiscript.handlers.OnMonitorContendedEnter 
-import org.jdiscript.handlers.OnMonitorContendedEntered 
-import org.jdiscript.handlers.OnMonitorWait 
-import org.jdiscript.handlers.OnMonitorWaited 
-import org.jdiscript.handlers.OnVMStart 
+import org.jdiscript.handlers.*
 import org.jdiscript.util.VMSocketAttacher 
-import com.sun.jdi.ObjectReference;
-import com.sun.jdi.ThreadReference;
-import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.*
 
 VirtualMachine vm = new VMSocketAttacher(12345).attach()
 JDIScript j = new JDIScript(vm)
