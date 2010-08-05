@@ -32,8 +32,8 @@ def start = {
 	println "Got StartEvent"
 } as OnVMStart
 
-j.monitorContendedEnterRequest().addHandler(contendedEnter).enable()
-j.monitorContendedEnteredRequest().addHandler(contendedEntered).enable()
+j.monitorContendedEnterRequest(contendedEnter).enable()
+j.monitorContendedEnteredRequest(contendedEntered).enable()
 j.run(start)
 	
 println "Shutting down"

@@ -8,6 +8,22 @@ import java.util.Set;
 import org.jdiscript.events.DebugEventDispatcher;
 import org.jdiscript.events.EventThread;
 import org.jdiscript.handlers.DebugEventHandler;
+import org.jdiscript.handlers.OnAccessWatchpoint;
+import org.jdiscript.handlers.OnBreakpoint;
+import org.jdiscript.handlers.OnClassPrepare;
+import org.jdiscript.handlers.OnClassUnload;
+import org.jdiscript.handlers.OnException;
+import org.jdiscript.handlers.OnMethodEntry;
+import org.jdiscript.handlers.OnMethodExit;
+import org.jdiscript.handlers.OnModificationWatchpoint;
+import org.jdiscript.handlers.OnMonitorContendedEnter;
+import org.jdiscript.handlers.OnMonitorContendedEntered;
+import org.jdiscript.handlers.OnMonitorWait;
+import org.jdiscript.handlers.OnMonitorWaited;
+import org.jdiscript.handlers.OnStep;
+import org.jdiscript.handlers.OnThreadDeath;
+import org.jdiscript.handlers.OnThreadStart;
+import org.jdiscript.handlers.OnVMDeath;
 import org.jdiscript.requests.ChainingAccessWatchpointRequest;
 import org.jdiscript.requests.ChainingBreakpointRequest;
 import org.jdiscript.requests.ChainingClassPrepareRequest;
@@ -108,105 +124,175 @@ public class JDIScript {
 	// Convenience methods for creating EventRequests, that will automatically
 	// set the handler as a property so that the Dispatcher works correctly.
     public ChainingAccessWatchpointRequest accessWatchpointRequest(Field field) {
-        return (ChainingAccessWatchpointRequest)EventRequestProxy.proxy(
+        return accessWatchpointRequest(field, null);
+    }
+
+    public ChainingAccessWatchpointRequest accessWatchpointRequest(Field field, OnAccessWatchpoint handler) {
+        return ((ChainingAccessWatchpointRequest)EventRequestProxy.proxy(
         		erm.createAccessWatchpointRequest(field),
-        		ChainingAccessWatchpointRequest.class);
+        		ChainingAccessWatchpointRequest.class)).addHandler(handler);
     }
 
     public ChainingBreakpointRequest breakpointRequest(Location location) {
-        return (ChainingBreakpointRequest)EventRequestProxy.proxy(
+        return breakpointRequest(location, null);
+    }
+
+    public ChainingBreakpointRequest breakpointRequest(Location location, OnBreakpoint handler) {
+        return ((ChainingBreakpointRequest)EventRequestProxy.proxy(
         		erm.createBreakpointRequest(location),
-        		ChainingBreakpointRequest.class);
+        		ChainingBreakpointRequest.class)).addHandler(handler);
     }
 
     public ChainingClassPrepareRequest classPrepareRequest() {
-        return (ChainingClassPrepareRequest)EventRequestProxy.proxy(
+        return classPrepareRequest(null);
+    }
+
+    public ChainingClassPrepareRequest classPrepareRequest(OnClassPrepare handler) {
+        return ((ChainingClassPrepareRequest)EventRequestProxy.proxy(
         		erm.createClassPrepareRequest(),
-        		ChainingClassPrepareRequest.class);
+        		ChainingClassPrepareRequest.class)).addHandler(handler);
     }
 
     public ChainingClassUnloadRequest classUnloadRequest() {
-        return (ChainingClassUnloadRequest)EventRequestProxy.proxy(
+        return classUnloadRequest(null);
+    }
+
+    public ChainingClassUnloadRequest classUnloadRequest(OnClassUnload handler) {
+        return ((ChainingClassUnloadRequest)EventRequestProxy.proxy(
         		erm.createClassUnloadRequest(),
-        		ChainingClassUnloadRequest.class);
+        		ChainingClassUnloadRequest.class)).addHandler(handler);
     }
     
     public ChainingExceptionRequest exceptionRequest(ReferenceType refType, 
     										 boolean notifyCaught, 
     										 boolean notifyUncaught) {
-        return (ChainingExceptionRequest)EventRequestProxy.proxy(
+    	return exceptionRequest(refType, notifyCaught, notifyUncaught, null);
+    }
+
+    public ChainingExceptionRequest exceptionRequest(ReferenceType refType, 
+    										 boolean notifyCaught, 
+    										 boolean notifyUncaught, 
+    										 OnException handler) {
+        return ((ChainingExceptionRequest)EventRequestProxy.proxy(
         		erm.createExceptionRequest(refType, 
             							   notifyCaught, 
             							   notifyUncaught),
-            	ChainingExceptionRequest.class);
+            	ChainingExceptionRequest.class)).addHandler(handler);
     }
 
     public ChainingMethodEntryRequest methodEntryRequest() {
-        return (ChainingMethodEntryRequest)EventRequestProxy.proxy(
+        return methodEntryRequest(null);
+    }
+
+    public ChainingMethodEntryRequest methodEntryRequest(OnMethodEntry handler) {
+        return ((ChainingMethodEntryRequest)EventRequestProxy.proxy(
         		erm.createMethodEntryRequest(),
-        		ChainingMethodEntryRequest.class);
+        		ChainingMethodEntryRequest.class)).addHandler(handler);
     }
     
     public ChainingMethodExitRequest methodExitRequest() {
-        return (ChainingMethodExitRequest)EventRequestProxy.proxy(
+        return methodExitRequest(null);
+    }
+
+    public ChainingMethodExitRequest methodExitRequest(OnMethodExit handler) {
+        return ((ChainingMethodExitRequest)EventRequestProxy.proxy(
         		erm.createMethodExitRequest(),
-        		ChainingMethodExitRequest.class);
+        		ChainingMethodExitRequest.class)).addHandler(handler);
     }
     
     public ChainingModificationWatchpointRequest modificationWatchpointRequest(Field field) {
-        return (ChainingModificationWatchpointRequest)EventRequestProxy.proxy(
+        return modificationWatchpointRequest(field, null);
+    }
+
+    public ChainingModificationWatchpointRequest modificationWatchpointRequest(Field field, OnModificationWatchpoint handler) {
+        return ((ChainingModificationWatchpointRequest)EventRequestProxy.proxy(
         		erm.createModificationWatchpointRequest(field),
-        		ChainingModificationWatchpointRequest.class);
+        		ChainingModificationWatchpointRequest.class)).addHandler(handler);
     }
     
     public ChainingMonitorContendedEnteredRequest monitorContendedEnteredRequest() {
-        return (ChainingMonitorContendedEnteredRequest)EventRequestProxy.proxy(
+        return monitorContendedEnteredRequest(null);
+    }
+
+    public ChainingMonitorContendedEnteredRequest monitorContendedEnteredRequest(OnMonitorContendedEntered handler) {
+        return ((ChainingMonitorContendedEnteredRequest)EventRequestProxy.proxy(
         		erm.createMonitorContendedEnteredRequest(),
-        		ChainingMonitorContendedEnteredRequest.class);
+        		ChainingMonitorContendedEnteredRequest.class)).addHandler(handler);
     }
 
     public ChainingMonitorContendedEnterRequest monitorContendedEnterRequest() {
-        return (ChainingMonitorContendedEnterRequest)EventRequestProxy.proxy(
+        return monitorContendedEnterRequest(null);
+    }
+
+    public ChainingMonitorContendedEnterRequest monitorContendedEnterRequest(OnMonitorContendedEnter handler) {
+        return ((ChainingMonitorContendedEnterRequest)EventRequestProxy.proxy(
         		erm.createMonitorContendedEnterRequest(),
-        		ChainingMonitorContendedEnterRequest.class);
+        		ChainingMonitorContendedEnterRequest.class)).addHandler(handler);
     }
     
     public ChainingMonitorWaitedRequest monitorWaitedRequest() {
-        return (ChainingMonitorWaitedRequest)EventRequestProxy.proxy(
+        return monitorWaitedRequest(null);
+    }
+
+    public ChainingMonitorWaitedRequest monitorWaitedRequest(OnMonitorWaited handler) {
+        return ((ChainingMonitorWaitedRequest)EventRequestProxy.proxy(
         		erm.createMonitorWaitedRequest(),
-        		ChainingMonitorWaitedRequest.class);
+        		ChainingMonitorWaitedRequest.class)).addHandler(handler);
     }
     
     public ChainingMonitorWaitRequest monitorWaitRequest() {
-        return (ChainingMonitorWaitRequest)EventRequestProxy.proxy(
+        return monitorWaitRequest(null);
+    }
+
+    public ChainingMonitorWaitRequest monitorWaitRequest(OnMonitorWait handler) {
+        return ((ChainingMonitorWaitRequest)EventRequestProxy.proxy(
         		erm.createMonitorWaitRequest(),
-        		ChainingMonitorWaitRequest.class);
+        		ChainingMonitorWaitRequest.class)).addHandler(handler);
     }
     
     public ChainingStepRequest stepRequest( ThreadReference thread, 
     								        int size, 
     								        int depth ) {
-        return (ChainingStepRequest)EventRequestProxy.proxy(
+    	return stepRequest( thread, size, depth , null);
+    }
+
+    public ChainingStepRequest stepRequest( ThreadReference thread, 
+    								    	int size, 
+    								    	int depth,
+    								    	OnStep handler) {
+    	return ((ChainingStepRequest)EventRequestProxy.proxy(
         		erm.createStepRequest(thread, size, depth),
-        		ChainingStepRequest.class);
+        		ChainingStepRequest.class)).addHandler(handler);
     }
     
     public ChainingThreadDeathRequest threadDeathRequest() {
-        return (ChainingThreadDeathRequest)EventRequestProxy.proxy(
+        return threadDeathRequest(null);
+    }
+
+    public ChainingThreadDeathRequest threadDeathRequest(OnThreadDeath handler) {
+        return ((ChainingThreadDeathRequest)EventRequestProxy.proxy(
         		erm.createThreadDeathRequest(),
-        		ChainingThreadDeathRequest.class);
+        		ChainingThreadDeathRequest.class)).addHandler(handler);
     }
     
     public ChainingThreadStartRequest threadStartRequest() {
-        return (ChainingThreadStartRequest)EventRequestProxy.proxy(
+        return threadStartRequest(null);
+    }
+
+    public ChainingThreadStartRequest threadStartRequest(OnThreadStart handler) {
+        return ((ChainingThreadStartRequest)EventRequestProxy.proxy(
         		erm.createThreadStartRequest(),
-        		ChainingThreadStartRequest.class);
+        		ChainingThreadStartRequest.class)).addHandler(handler);
     }
     
     public ChainingVMDeathRequest vmDeathRequest() {
-        return (ChainingVMDeathRequest)EventRequestProxy.proxy(
+        return vmDeathRequest(null);
+    }
+
+    public ChainingVMDeathRequest vmDeathRequest(OnVMDeath handler) {
+        return ((ChainingVMDeathRequest)EventRequestProxy.proxy(
         		erm.createVMDeathRequest(),
-        		ChainingVMDeathRequest.class);
+        		ChainingVMDeathRequest.class)).addHandler(handler);
     }
     
     // Convenience method for accessing only those EventRequests that are 

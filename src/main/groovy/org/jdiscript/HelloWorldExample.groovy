@@ -19,23 +19,20 @@ VirtualMachine vm = new VMLauncher(OPTIONS, MAIN).start()
 
 JDIScript j = new JDIScript(vm);
 j.run({
-	j.classPrepareRequest()
-	 .addClassFilter("org.jdiscript.example.HelloWorld")
-	 .addHandler({
+	j.classPrepareRequest({
 		 def field = it.referenceType().fieldByName("helloTo")
-		 j.accessWatchpointRequest(field)
-		  .addHandler({
+		 j.accessWatchpointRequest(field, {
 			  def obj = it.object()
 			  j.stepRequest(it.thread(), 
 				            StepRequest.STEP_MIN, 
-							StepRequest.STEP_OVER)
-			   .addHandler({	
+							StepRequest.STEP_OVER, {	
 				   StringReference alttobe = it.virtualMachine().mirrorOf("Groovy")
 				   it.request().disable()
 				   obj.setValue(field, alttobe)
 				} as OnStep).enable()
 		  } as OnAccessWatchpoint).enable()
-	 } as OnClassPrepare).enable()
+	 } as OnClassPrepare).addClassFilter("org.jdiscript.example.HelloWorld")
+	                     .enable()
 } as OnVMStart)
 
 

@@ -47,13 +47,17 @@ public class EventRequestProxy implements InvocationHandler {
 				return out;
 			}
 		} else if (name.equals("addHandler")) {
+			Object handlerObj = args[0];
+			if(handlerObj == null) {
+				return proxy;
+			}
 			Set<DebugEventHandler> handlers 
 				= JDIScript.getHandlers(proxiedRequest);
 			if(handlers == null) {
 				handlers = new HashSet<DebugEventHandler>();
 				proxiedRequest.putProperty(JDIScript.PROP_KEY, handlers);
 			}
-			Object handlerObj = args[0];
+			
 			DebugEventHandler handler = null;
 			if(handlerObj instanceof DebugEventHandler) {
 				handler = (DebugEventHandler)handlerObj;

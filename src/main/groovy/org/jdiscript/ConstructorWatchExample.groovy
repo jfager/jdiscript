@@ -23,16 +23,14 @@ Stack stack = new Stack<Location>()
 
 start = {
 	vm.allClasses().each { constructors it }
-	jdi.classPrepareRequest()
-	   .addHandler({ constructors it.referenceType() } as OnClassPrepare)
+	jdi.classPrepareRequest({ constructors it.referenceType() } as OnClassPrepare)
 	   .enable()
 } as OnVMStart
 
 constructors = { ReferenceType refType ->
 	refType.methodsByName('<init>').each {
 		if(it.location().declaringType().name() != 'java.lang.Object') {
-			def br = jdi.breakpointRequest(it.location())
-						.addHandler(breakpoint)
+			def br = jdi.breakpointRequest(it.location(), breakpoint)
 			if(refType.name().startsWith('org.jdiscript')) {
 				br.enable()
 			}
@@ -49,9 +47,8 @@ breakpoint = {
 		
 	jdi.breakpointRequests(breakpoint).each { it.enable() }
 			
-	jdi.methodExitRequest()
+	jdi.methodExitRequest(methodExit)
 	   .addInstanceFilter( it.thread().frame(0).thisObject() )
-	   .addHandler(methodExit)
 	   .enable()
 } as OnBreakpoint
 
