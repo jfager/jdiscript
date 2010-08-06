@@ -7,24 +7,18 @@ import com.sun.jdi.*
 VirtualMachine vm = new VMSocketAttacher(12345).attach()
 JDIScript j = new JDIScript(vm)
 
-def contendedEnter = {
+j.monitorContendedEnterRequest({
 	long timestamp = System.currentTimeMillis()
 	println "${timestamp}: Contended enter for ${it.monitor()} by ${it.thread()}"
 	it.thread().frames().each { println "   " + it }
-} as OnMonitorContendedEnter
+} as OnMonitorContendedEnter).enable()
 
-def contendedEntered = {
+j.monitorContendedEnteredRequest({
 	long timestamp = System.currentTimeMillis()
 	println "${timestamp}: Contended entered for ${it.monitor()} by ${it.thread()}"
-} as OnMonitorContendedEntered
+} as OnMonitorContendedEntered).enable()
 
-def start = {
-	println "Got StartEvent"
-} as OnVMStart
-
-j.monitorContendedEnterRequest(contendedEnter).enable()
-j.monitorContendedEnteredRequest(contendedEntered).enable()
-j.run(start)
+j.run({ println "Got StartEvent" } as OnVMStart)
 	
 println "Shutting down"
 
