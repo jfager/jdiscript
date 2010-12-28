@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="build" name="jdiscript">
+    <property name="build.src" value="${basedir}/src" />
+    <property name="build.out" value="${basedir}/build" />
+    <property name="build.classes" value="${build.out}/classes" />
+    <property name="final.name" value="jdiscript" />
+
+    <target name="init">
+        <mkdir dir="${build.classes}" />
+    </target>
+
+    <target depends="init" name="build">
+        <javac destdir="${build.classes}">
+            <src path="${build.src}" />
+        </javac>
+    </target>
+
+    <target name="jar" depends="build">
+        <mkdir dir="${build.classes}/META-INF" />
+        <jar jarfile="${build.out}/${final.name}.jar"
+                basedir="${build.classes}" />
+    </target>
+
+    <target name="clean">
+        <delete dir="${build.out}" />
+    </target>
+</project>
