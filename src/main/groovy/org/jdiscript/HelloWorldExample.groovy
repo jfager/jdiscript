@@ -1,38 +1,38 @@
 package org.jdiscript;
 
-import org.jdiscript.handlers.OnAccessWatchpoint 
-import org.jdiscript.handlers.OnClassPrepare 
-import org.jdiscript.handlers.OnStep 
-import org.jdiscript.handlers.OnVMStart 
+import org.jdiscript.handlers.OnAccessWatchpoint
+import org.jdiscript.handlers.OnClassPrepare
+import org.jdiscript.handlers.OnStep
+import org.jdiscript.handlers.OnVMStart
 
 import org.jdiscript.util.VMLauncher;
 import com.sun.jdi.StringReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.request.ClassPrepareRequest;
-import com.sun.jdi.request.StepRequest 
+import com.sun.jdi.request.StepRequest
 
 String OPTIONS = """
-	-cp ./target/classes/
+    -cp ./target/classes/
 """
 String MAIN = "org.jdiscript.example.HelloWorld"
-VirtualMachine vm = new VMLauncher(OPTIONS, MAIN).start() 
+VirtualMachine vm = new VMLauncher(OPTIONS, MAIN).start()
 
 JDIScript j = new JDIScript(vm);
 j.run({
-	j.classPrepareRequest({
-		 def field = it.referenceType().fieldByName("helloTo")
-		 j.accessWatchpointRequest(field, {
-			  def obj = it.object()
-			  j.stepRequest(it.thread(), 
-				            StepRequest.STEP_MIN, 
-							StepRequest.STEP_OVER, {	
-				   StringReference alttobe = it.virtualMachine().mirrorOf("Groovy")
-				   it.request().disable()
-				   obj.setValue(field, alttobe)
-				} as OnStep).enable()
-		  } as OnAccessWatchpoint).enable()
-	 } as OnClassPrepare).addClassFilter("org.jdiscript.example.HelloWorld")
-	                     .enable()
+    j.classPrepareRequest({
+         def field = it.referenceType().fieldByName("helloTo")
+         j.accessWatchpointRequest(field, {
+              def obj = it.object()
+              j.stepRequest(it.thread(),
+                            StepRequest.STEP_MIN,
+                            StepRequest.STEP_OVER, {
+                   StringReference alttobe = it.virtualMachine().mirrorOf("Groovy")
+                   it.request().disable()
+                   obj.setValue(field, alttobe)
+                } as OnStep).enable()
+          } as OnAccessWatchpoint).enable()
+     } as OnClassPrepare).addClassFilter("org.jdiscript.example.HelloWorld")
+                         .enable()
 } as OnVMStart)
 
 

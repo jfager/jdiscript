@@ -8,20 +8,20 @@ import com.sun.jdi.ThreadReference;
 
 public interface ChainingMethodExitRequest extends JDIScriptEventRequest {
 
-	//Chaining EventRequest methods
-	ChainingMethodExitRequest addCountFilter(int count);
-	ChainingMethodExitRequest disable();
-	ChainingMethodExitRequest enable();
-	ChainingMethodExitRequest putProperty(Object key, Object value);
-	ChainingMethodExitRequest setEnabled(boolean val);
-	ChainingMethodExitRequest setSuspendPolicy(int policy);
-	
-	//Chaining MethodExitRequest methods
-	ChainingMethodExitRequest addClassExclusionFilter(String classPattern);
-	ChainingMethodExitRequest addClassFilter(ReferenceType refType);
-	ChainingMethodExitRequest addClassFilter(String classPattern);
-	ChainingMethodExitRequest addInstanceFilter(ObjectReference instance);
-	ChainingMethodExitRequest addThreadFilter(ThreadReference thread);
+    //Chaining EventRequest methods
+    ChainingMethodExitRequest addCountFilter(int count);
+    ChainingMethodExitRequest disable();
+    ChainingMethodExitRequest enable();
+    ChainingMethodExitRequest putProperty(Object key, Object value);
+    ChainingMethodExitRequest setEnabled(boolean val);
+    ChainingMethodExitRequest setSuspendPolicy(int policy);
 
-	ChainingMethodExitRequest addHandler(OnMethodExit handler);
+    //Chaining MethodExitRequest methods
+    ChainingMethodExitRequest addClassExclusionFilter(String classPattern);
+    ChainingMethodExitRequest addClassFilter(ReferenceType refType);
+    ChainingMethodExitRequest addClassFilter(String classPattern);
+    ChainingMethodExitRequest addInstanceFilter(ObjectReference instance);
+    ChainingMethodExitRequest addThreadFilter(ThreadReference thread);
+
+    ChainingMethodExitRequest addHandler(OnMethodExit handler);
 }

@@ -8,20 +8,20 @@ import com.sun.jdi.ThreadReference;
 
 public interface ChainingMonitorContendedEnterRequest extends JDIScriptEventRequest {
 
-	//Chaining EventRequest methods
-	ChainingMonitorContendedEnterRequest addCountFilter(int count);
-	ChainingMonitorContendedEnterRequest disable();
-	ChainingMonitorContendedEnterRequest enable();
-	ChainingMonitorContendedEnterRequest putProperty(Object key, Object value);
-	ChainingMonitorContendedEnterRequest setEnabled(boolean val);
-	ChainingMonitorContendedEnterRequest setSuspendPolicy(int policy);
-	
-	//Chaining MonitorContendedEnterRequest methods
-	ChainingMonitorContendedEnterRequest addClassExclusionFilter(String classPattern);
-	ChainingMonitorContendedEnterRequest addClassFilter(ReferenceType refType);
-	ChainingMonitorContendedEnterRequest addClassFilter(String classPattern);
-	ChainingMonitorContendedEnterRequest addInstanceFilter(ObjectReference instance);
-	ChainingMonitorContendedEnterRequest addThreadFilter(ThreadReference thread);
+    //Chaining EventRequest methods
+    ChainingMonitorContendedEnterRequest addCountFilter(int count);
+    ChainingMonitorContendedEnterRequest disable();
+    ChainingMonitorContendedEnterRequest enable();
+    ChainingMonitorContendedEnterRequest putProperty(Object key, Object value);
+    ChainingMonitorContendedEnterRequest setEnabled(boolean val);
+    ChainingMonitorContendedEnterRequest setSuspendPolicy(int policy);
 
-	ChainingMonitorContendedEnterRequest addHandler(OnMonitorContendedEnter handler);
+    //Chaining MonitorContendedEnterRequest methods
+    ChainingMonitorContendedEnterRequest addClassExclusionFilter(String classPattern);
+    ChainingMonitorContendedEnterRequest addClassFilter(ReferenceType refType);
+    ChainingMonitorContendedEnterRequest addClassFilter(String classPattern);
+    ChainingMonitorContendedEnterRequest addInstanceFilter(ObjectReference instance);
+    ChainingMonitorContendedEnterRequest addThreadFilter(ThreadReference thread);
+
+    ChainingMonitorContendedEnterRequest addHandler(OnMonitorContendedEnter handler);
 }

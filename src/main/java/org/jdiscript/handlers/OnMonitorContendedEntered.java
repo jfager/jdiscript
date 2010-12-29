@@ -4,5 +4,5 @@ import com.sun.jdi.event.MonitorContendedEnteredEvent;
 
 public interface OnMonitorContendedEntered extends DebugLocatableHandler
 {
-	void exec(MonitorContendedEnteredEvent event); 
+    void exec(MonitorContendedEnteredEvent event);
 }

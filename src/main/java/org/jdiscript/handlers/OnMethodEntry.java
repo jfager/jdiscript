@@ -4,5 +4,5 @@ import com.sun.jdi.event.MethodEntryEvent;
 
 public interface OnMethodEntry extends DebugLocatableHandler
 {
-	void exec(MethodEntryEvent event);
+    void exec(MethodEntryEvent event);
 }

@@ -1,5 +1,5 @@
 /*
- * @(#)StreamRedirectThread.java	1.6 05/11/17
+ * @(#)StreamRedirectThread.java    1.6 05/11/17
  *
  * Copyright 2006 Sun Microsystems, Inc. All rights reserved.
  * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
@@ -48,45 +48,45 @@ import java.io.PrintStream;
  * @author Robert Field
  */
 class StreamRedirectThread extends Thread {
-	private final BufferedReader in;
-	private final PrintStream out;
+    private final BufferedReader in;
+    private final PrintStream out;
 
-	/**
-	 * Set up for copy.
-	 *
-	 * @param name
-	 *            Name of the thread
-	 * @param in
-	 *            Stream to copy from
-	 * @param out
-	 *            Stream to copy to
-	 */
-	StreamRedirectThread(String name, InputStream in, OutputStream out) {
-		this(name, in, new PrintStream(out));
-	}
+    /**
+     * Set up for copy.
+     *
+     * @param name
+     *            Name of the thread
+     * @param in
+     *            Stream to copy from
+     * @param out
+     *            Stream to copy to
+     */
+    StreamRedirectThread(String name, InputStream in, OutputStream out) {
+        this(name, in, new PrintStream(out));
+    }
 
-	StreamRedirectThread(String name, InputStream in, PrintStream out) {
-		super(name);
-		this.in = new BufferedReader(new InputStreamReader(in));
-		this.out = out;
-		setPriority(Thread.MAX_PRIORITY - 1);
-	}
+    StreamRedirectThread(String name, InputStream in, PrintStream out) {
+        super(name);
+        this.in = new BufferedReader(new InputStreamReader(in));
+        this.out = out;
+        setPriority(Thread.MAX_PRIORITY - 1);
+    }
 
-	/**
-	 * Copy.
-	 */
-	@Override
-	public void run() {
-		try {
-			String str = "";
-			while (str != null) {
-				str = in.readLine();
-				if(str != null) {
-					out.println(str);
-				}
-			}
-		} catch (IOException exc) {
-			exc.printStackTrace();
-		}
-	}
+    /**
+     * Copy.
+     */
+    @Override
+    public void run() {
+        try {
+            String str = "";
+            while (str != null) {
+                str = in.readLine();
+                if(str != null) {
+                    out.println(str);
+                }
+            }
+        } catch (IOException exc) {
+            exc.printStackTrace();
+        }
+    }
 }

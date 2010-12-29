@@ -4,6 +4,6 @@ import com.sun.jdi.event.MonitorWaitedEvent;
 
 public interface OnMonitorWaited extends DebugLocatableHandler
 {
-	void exec(MonitorWaitedEvent event);
+    void exec(MonitorWaitedEvent event);
 }
-	
+

@@ -1,5 +1,5 @@
 /*
- * @(#)EventThread.java	1.6 05/11/17
+ * @(#)EventThread.java    1.6 05/11/17
  *
  * Copyright 2006 Sun Microsystems, Inc. All rights reserved.
  * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
@@ -52,69 +52,69 @@ import com.sun.jdi.event.VMDisconnectEvent;
  */
 public class EventThread extends Thread {
 
-	private final VirtualMachine vm; // Running VM
-	private final DebugEventDispatcher dispatcher;
+    private final VirtualMachine vm; // Running VM
+    private final DebugEventDispatcher dispatcher;
 
-	public EventThread(	VirtualMachine vm,
-						DebugEventDispatcher dispatcher )
-	{
-		super("jdiscript-event-thread");
-		this.vm = vm;
-		this.dispatcher = dispatcher;
-	}
+    public EventThread(    VirtualMachine vm,
+                        DebugEventDispatcher dispatcher )
+    {
+        super("jdiscript-event-thread");
+        this.vm = vm;
+        this.dispatcher = dispatcher;
+    }
 
-	/**
-	 * Run the event handling thread. As long as we are connected, get event
-	 * sets off the queue and dispatch the events within them.
-	 */
-	@Override
-	public void run() {
-		EventQueue queue = vm.eventQueue();
-		while (true) {
-			try {
-				EventSet eventSet = queue.remove();
-				int suspendPolicy = eventSet.suspendPolicy();
-				EventIterator it = eventSet.eventIterator();
-				while (it.hasNext()) {
-					dispatcher.dispatch(vm, it.nextEvent(), suspendPolicy);
-				}
-				eventSet.resume();
-			} catch (InterruptedException exc) {
-				// Ignore
-			} catch (VMDisconnectedException discExc) {
-				handleDisconnectedException();
-				break;
-			} 
-		}
-	}
+    /**
+     * Run the event handling thread. As long as we are connected, get event
+     * sets off the queue and dispatch the events within them.
+     */
+    @Override
+    public void run() {
+        EventQueue queue = vm.eventQueue();
+        while (true) {
+            try {
+                EventSet eventSet = queue.remove();
+                int suspendPolicy = eventSet.suspendPolicy();
+                EventIterator it = eventSet.eventIterator();
+                while (it.hasNext()) {
+                    dispatcher.dispatch(vm, it.nextEvent(), suspendPolicy);
+                }
+                eventSet.resume();
+            } catch (InterruptedException exc) {
+                // Ignore
+            } catch (VMDisconnectedException discExc) {
+                handleDisconnectedException();
+                break;
+            }
+        }
+    }
 
-	/**
-	 * A VMDisconnectedException has happened while dealing with another event.
-	 * We need to flush the event queue, dealing only with exit events (VMDeath,
-	 * VMDisconnect) so that we terminate correctly.
-	 */
-	synchronized void handleDisconnectedException() {
-		EventQueue queue = vm.eventQueue();
-		boolean connected = true;
-		while (connected) {
-			try {
-				EventSet eventSet = queue.remove();
-				EventIterator iter = eventSet.eventIterator();
-				while (iter.hasNext()) {
-					Event event = iter.nextEvent();
-					if (event instanceof VMDeathEvent) {
-						dispatcher.dispatch(vm, event, eventSet.suspendPolicy());
-					} else if (event instanceof VMDisconnectEvent) {
-						dispatcher.dispatch(vm, event, eventSet.suspendPolicy());
-						connected = false;
-					}
-				}
-				eventSet.resume(); // Resume the VM
-			} catch (InterruptedException e) {
-				// ignore
-			} catch (VMDisconnectedException e) {
-				break;
-			}
-		}
-	}
+    /**
+     * A VMDisconnectedException has happened while dealing with another event.
+     * We need to flush the event queue, dealing only with exit events (VMDeath,
+     * VMDisconnect) so that we terminate correctly.
+     */
+    synchronized void handleDisconnectedException() {
+        EventQueue queue = vm.eventQueue();
+        boolean connected = true;
+        while (connected) {
+            try {
+                EventSet eventSet = queue.remove();
+                EventIterator iter = eventSet.eventIterator();
+                while (iter.hasNext()) {
+                    Event event = iter.nextEvent();
+                    if (event instanceof VMDeathEvent) {
+                        dispatcher.dispatch(vm, event, eventSet.suspendPolicy());
+                    } else if (event instanceof VMDisconnectEvent) {
+                        dispatcher.dispatch(vm, event, eventSet.suspendPolicy());
+                        connected = false;
+                    }
+                }
+                eventSet.resume(); // Resume the VM
+            } catch (InterruptedException e) {
+                // ignore
+            } catch (VMDisconnectedException e) {
+                break;
+            }
+        }
+    }
 }
