@@ -7,7 +7,7 @@ import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
 
-public interface ChainingModificationWatchpointRequest {
+public interface ChainingModificationWatchpointRequest extends JDIScriptEventRequest {
 
     //Chaining EventRequest methods
     ChainingModificationWatchpointRequest addCountFilter(int count);
