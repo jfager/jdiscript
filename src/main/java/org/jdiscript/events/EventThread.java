@@ -55,7 +55,7 @@ public class EventThread extends Thread {
     private final VirtualMachine vm; // Running VM
     private final DebugEventDispatcher dispatcher;
 
-    public EventThread(    VirtualMachine vm,
+    public EventThread( VirtualMachine vm,
                         DebugEventDispatcher dispatcher )
     {
         super("jdiscript-event-thread");
