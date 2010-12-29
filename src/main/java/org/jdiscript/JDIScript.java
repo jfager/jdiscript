@@ -68,13 +68,6 @@ import com.sun.jdi.request.VMDeathRequest;
 
 public class JDIScript {
 
-    public static final String PROP_KEY = "JDISCRIPT_HANDLER";
-
-    @SuppressWarnings("unchecked")
-    public static Set<DebugEventHandler> getHandlers(EventRequest er) {
-        return (Set<DebugEventHandler>)(er.getProperty(PROP_KEY));
-    }
-
     private final VirtualMachine vm;
     private final EventRequestManager erm;
 
@@ -365,7 +358,7 @@ public class JDIScript {
     public <T extends EventRequest> List<T> filter(List<T> ers, DebugEventHandler handler) {
         List<T> out = new ArrayList<T>();
         for(T er: ers) {
-            Set<DebugEventHandler> handlers = getHandlers(er);
+            Set<DebugEventHandler> handlers = DebugEventDispatcher.getHandlers(er);
             if(handlers.contains(handler)) {
                 out.add(er);
             }

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 
-import org.jdiscript.JDIScript;
 import org.jdiscript.handlers.DebugEventHandler;
 import org.jdiscript.handlers.OnAccessWatchpoint;
 import org.jdiscript.handlers.OnBreakpoint;
@@ -56,6 +56,31 @@ import com.sun.jdi.request.EventRequest;
 
 public class DebugEventDispatcher {
 
+    public static final String PROP_KEY = "JDISCRIPT_HANDLER";
+
+    /**
+     * Get the handlers associated with the given EventRequest.
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<DebugEventHandler> getHandlers(EventRequest er) {
+        return (Set<DebugEventHandler>)(er.getProperty(PROP_KEY));
+    }
+
+    /**
+     * Attach a DebugEventHandler to an EventRequest.
+     * <p>
+     * Using this method ensures that a DebugEventDispatcher will be able to
+     * use to dispatch an event for the request to the given handler.
+     */
+    public static boolean addHandler(EventRequest er, DebugEventHandler handler) {
+        Set<DebugEventHandler> handlers = getHandlers(er);
+        if(handlers == null) {
+            handlers = new HashSet<DebugEventHandler>();
+            er.putProperty(PROP_KEY, handlers);
+        }
+        return handlers.add(handler);
+    }
+
     private List<DebugEventHandler> handlers
         = new ArrayList<DebugEventHandler>();
 
@@ -79,13 +104,14 @@ public class DebugEventDispatcher {
             return;
         }
 
-        final Set<DebugEventHandler> handlers = JDIScript.getHandlers(request);
+        final Set<DebugEventHandler> requestHandlers = getHandlers(request);
 
-        if(handlers == null) {
-            throw new RuntimeException("No handlers specified for event " + event);
+        if(requestHandlers == null) {
+            throw new RuntimeException("No request handlers specified for event "
+                                       + event);
         }
 
-        for(DebugEventHandler handler: handlers) {
+        for(DebugEventHandler handler: requestHandlers) {
             doFullDispatch(event, handler);
         }
     }
