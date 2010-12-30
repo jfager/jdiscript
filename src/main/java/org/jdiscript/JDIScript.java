@@ -5,67 +5,38 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.jdiscript.events.DebugEventDispatcher;
-import org.jdiscript.events.EventThread;
-import org.jdiscript.handlers.DebugEventHandler;
-import org.jdiscript.handlers.OnAccessWatchpoint;
-import org.jdiscript.handlers.OnBreakpoint;
-import org.jdiscript.handlers.OnClassPrepare;
-import org.jdiscript.handlers.OnClassUnload;
-import org.jdiscript.handlers.OnException;
-import org.jdiscript.handlers.OnMethodEntry;
-import org.jdiscript.handlers.OnMethodExit;
-import org.jdiscript.handlers.OnModificationWatchpoint;
-import org.jdiscript.handlers.OnMonitorContendedEnter;
-import org.jdiscript.handlers.OnMonitorContendedEntered;
-import org.jdiscript.handlers.OnMonitorWait;
-import org.jdiscript.handlers.OnMonitorWaited;
-import org.jdiscript.handlers.OnStep;
-import org.jdiscript.handlers.OnThreadDeath;
-import org.jdiscript.handlers.OnThreadStart;
-import org.jdiscript.handlers.OnVMDeath;
-import org.jdiscript.requests.ChainingAccessWatchpointRequest;
-import org.jdiscript.requests.ChainingBreakpointRequest;
-import org.jdiscript.requests.ChainingClassPrepareRequest;
-import org.jdiscript.requests.ChainingClassUnloadRequest;
-import org.jdiscript.requests.ChainingExceptionRequest;
-import org.jdiscript.requests.ChainingMethodEntryRequest;
-import org.jdiscript.requests.ChainingMethodExitRequest;
-import org.jdiscript.requests.ChainingModificationWatchpointRequest;
-import org.jdiscript.requests.ChainingMonitorContendedEnterRequest;
-import org.jdiscript.requests.ChainingMonitorContendedEnteredRequest;
-import org.jdiscript.requests.ChainingMonitorWaitRequest;
-import org.jdiscript.requests.ChainingMonitorWaitedRequest;
-import org.jdiscript.requests.ChainingStepRequest;
-import org.jdiscript.requests.ChainingThreadDeathRequest;
-import org.jdiscript.requests.ChainingThreadStartRequest;
-import org.jdiscript.requests.ChainingVMDeathRequest;
-import org.jdiscript.requests.EventRequestProxy;
+import org.jdiscript.events.*;
+import org.jdiscript.handlers.*;
+import org.jdiscript.requests.*;
 
 import com.sun.jdi.Field;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.request.AccessWatchpointRequest;
-import com.sun.jdi.request.BreakpointRequest;
-import com.sun.jdi.request.ClassPrepareRequest;
-import com.sun.jdi.request.ClassUnloadRequest;
-import com.sun.jdi.request.EventRequest;
-import com.sun.jdi.request.EventRequestManager;
-import com.sun.jdi.request.ExceptionRequest;
-import com.sun.jdi.request.MethodEntryRequest;
-import com.sun.jdi.request.MethodExitRequest;
-import com.sun.jdi.request.ModificationWatchpointRequest;
-import com.sun.jdi.request.MonitorContendedEnterRequest;
-import com.sun.jdi.request.MonitorContendedEnteredRequest;
-import com.sun.jdi.request.MonitorWaitRequest;
-import com.sun.jdi.request.MonitorWaitedRequest;
-import com.sun.jdi.request.StepRequest;
-import com.sun.jdi.request.ThreadDeathRequest;
-import com.sun.jdi.request.ThreadStartRequest;
-import com.sun.jdi.request.VMDeathRequest;
+import com.sun.jdi.request.*;
 
+/**
+ * Top-level class encapsulating common operations for working with
+ * JDI and jdiscript.
+ * <p>
+ * <ul>
+ *  <li>
+ *    Pulls the {@link EventRequestManager} create*Request
+ *    methods up to the top level, shortens their names, returns
+ *    chainable requests, and allows handlers to be specified when
+ *    requests are created.
+ *  </li>
+ *  <li>
+ *    Pulls the {@link EventRequestManager} *Requests
+ *    methods up to the top level and adds filtering by handler.
+ *  </li>
+ *  <li>
+ *    Runs the associated VM by setting up and starting the jdiscript
+ *    {@link DebugEventDispatcher} and {@link EventThread}.
+ *  </li>
+ * </ul>
+ */
 public class JDIScript {
 
     private final VirtualMachine vm;
@@ -76,31 +47,82 @@ public class JDIScript {
         this.erm = vm.eventRequestManager();
     }
 
+    /**
+     * @return The underlying {@link VirtualMachine}.
+     */
     public VirtualMachine vm() {
         return vm;
     }
 
+    /**
+     * Run the underlying {@link VirtualMachine} with no VM
+     * event handlers and no timeout.  Note that you may still add
+     * handlers for other events created with this class's *Request
+     * methods.
+     */
     public void run() {
         run(0);
     }
 
+    /**
+     * Run the underlying {@link VirtualMachine} with no VM
+     * event handlers and a given timeout, in millis.  Note that
+     * you may still add handlers for other events created with
+     * this class's *Request methods.
+     *
+     * @param millis    Timeout in millis.
+     */
     public void run(long millis) {
         List<DebugEventHandler> empty = Collections.emptyList();
         run(empty, millis);
     }
 
+    /**
+     * Run the underlying {@link VirtualMachine} with a single VM
+     * event handler and no timeout.  Note that you may still add
+     * handlers for other events created with this class's *Request
+     * methods.
+     *
+     * @param handler  A DebugEventHandler for VM events.
+     */
     public void run(DebugEventHandler handler) {
         run(handler, 0);
     }
 
+    /**
+     * Run the underlying {@link VirtualMachine} with multiple VM
+     * event handlers and no timeout.  Note that you may still add
+     * handlers for other events created with this class's *Request
+     * methods.
+     *
+     * @param handlers  A list of DebugEventHandlers for VM events.
+     */
     public void run(List<DebugEventHandler> handlers) {
         run(handlers, 0);
     }
 
+    /**
+     * Run the underlying {@link VirtualMachine} with a single VM
+     * event handler and a given timeout, in millis.  Note that you
+     * may still add handlers for other events created with this
+     * class's *Request methods.
+     *
+     * @param handler  A DebugEventHandler for VM events.
+     * @param millis    Timeout in millis.
+     */
     public void run(DebugEventHandler handler, long millis) {
         run(Collections.singletonList(handler), millis);
     }
 
+    /**
+     * Run the underlying {@link VirtualMachine} with a multiple VM
+     * event handlers and a given timeout, in millis.  Note that you
+     * may still add handlers for other events created with this
+     * class's *Request methods.
+     *
+     * @param handlers  A list of DebugEventHandlers for VM events.
+     * @param millis    Timeout in millis.
+     */
     public void run(List<DebugEventHandler> handlers, long millis) {
         DebugEventDispatcher dispatcher = new DebugEventDispatcher();
         dispatcher.addHandlers(handlers);
@@ -116,52 +138,83 @@ public class JDIScript {
 
     // Convenience methods for creating EventRequests, that will automatically
     // set the handler as a property so that the Dispatcher works correctly.
+
+    /**
+     * @see EventRequestManager#createAccessWatchpointRequest
+     */
     public ChainingAccessWatchpointRequest accessWatchpointRequest(Field field) {
         return accessWatchpointRequest(field, null);
     }
 
+    /**
+     * @see EventRequestManager#createAccessWatchpointRequest
+     */
     public ChainingAccessWatchpointRequest accessWatchpointRequest(Field field, OnAccessWatchpoint handler) {
         return ((ChainingAccessWatchpointRequest)EventRequestProxy.proxy(
                 erm.createAccessWatchpointRequest(field),
                 ChainingAccessWatchpointRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createBreakpointRequest
+     */
     public ChainingBreakpointRequest breakpointRequest(Location location) {
         return breakpointRequest(location, null);
     }
 
+    /**
+     * @see EventRequestManager#createBreakpointRequest
+     */
     public ChainingBreakpointRequest breakpointRequest(Location location, OnBreakpoint handler) {
         return ((ChainingBreakpointRequest)EventRequestProxy.proxy(
                 erm.createBreakpointRequest(location),
                 ChainingBreakpointRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createClassPrepareRequest
+     */
     public ChainingClassPrepareRequest classPrepareRequest() {
         return classPrepareRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createClassPrepareRequest
+     */
     public ChainingClassPrepareRequest classPrepareRequest(OnClassPrepare handler) {
         return ((ChainingClassPrepareRequest)EventRequestProxy.proxy(
                 erm.createClassPrepareRequest(),
                 ChainingClassPrepareRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createClassUnloadRequest
+     */
     public ChainingClassUnloadRequest classUnloadRequest() {
         return classUnloadRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createClassUnloadRequest
+     */
     public ChainingClassUnloadRequest classUnloadRequest(OnClassUnload handler) {
         return ((ChainingClassUnloadRequest)EventRequestProxy.proxy(
                 erm.createClassUnloadRequest(),
                 ChainingClassUnloadRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createExceptionRequest
+     */
     public ChainingExceptionRequest exceptionRequest(ReferenceType refType,
                                              boolean notifyCaught,
                                              boolean notifyUncaught) {
         return exceptionRequest(refType, notifyCaught, notifyUncaught, null);
     }
 
+    /**
+     * @see EventRequestManager#createExceptionRequest
+     */
     public ChainingExceptionRequest exceptionRequest(ReferenceType refType,
                                              boolean notifyCaught,
                                              boolean notifyUncaught,
@@ -173,82 +226,130 @@ public class JDIScript {
                 ChainingExceptionRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createMethodEntryRequest
+     */
     public ChainingMethodEntryRequest methodEntryRequest() {
         return methodEntryRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createMethodEntryRequest
+     */
     public ChainingMethodEntryRequest methodEntryRequest(OnMethodEntry handler) {
         return ((ChainingMethodEntryRequest)EventRequestProxy.proxy(
                 erm.createMethodEntryRequest(),
                 ChainingMethodEntryRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createMethodExitRequest
+     */
     public ChainingMethodExitRequest methodExitRequest() {
         return methodExitRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createMethodExitRequest
+     */
     public ChainingMethodExitRequest methodExitRequest(OnMethodExit handler) {
         return ((ChainingMethodExitRequest)EventRequestProxy.proxy(
                 erm.createMethodExitRequest(),
                 ChainingMethodExitRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createModificationWatchpointRequest
+     */
     public ChainingModificationWatchpointRequest modificationWatchpointRequest(Field field) {
         return modificationWatchpointRequest(field, null);
     }
 
+    /**
+     * @see EventRequestManager#createModificationWatchpointRequest
+     */
     public ChainingModificationWatchpointRequest modificationWatchpointRequest(Field field, OnModificationWatchpoint handler) {
         return ((ChainingModificationWatchpointRequest)EventRequestProxy.proxy(
                 erm.createModificationWatchpointRequest(field),
                 ChainingModificationWatchpointRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createMonitorContendedEnteredRequest
+     */
     public ChainingMonitorContendedEnteredRequest monitorContendedEnteredRequest() {
         return monitorContendedEnteredRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createMonitorContendedEnteredRequest
+     */
     public ChainingMonitorContendedEnteredRequest monitorContendedEnteredRequest(OnMonitorContendedEntered handler) {
         return ((ChainingMonitorContendedEnteredRequest)EventRequestProxy.proxy(
                 erm.createMonitorContendedEnteredRequest(),
                 ChainingMonitorContendedEnteredRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createMonitorContendedEnterRequest
+     */
     public ChainingMonitorContendedEnterRequest monitorContendedEnterRequest() {
         return monitorContendedEnterRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createMonitorContendedEnterRequest
+     */
     public ChainingMonitorContendedEnterRequest monitorContendedEnterRequest(OnMonitorContendedEnter handler) {
         return ((ChainingMonitorContendedEnterRequest)EventRequestProxy.proxy(
                 erm.createMonitorContendedEnterRequest(),
                 ChainingMonitorContendedEnterRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createMonitorWaitedRequest
+     */
     public ChainingMonitorWaitedRequest monitorWaitedRequest() {
         return monitorWaitedRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createMonitorWaitedRequest
+     */
     public ChainingMonitorWaitedRequest monitorWaitedRequest(OnMonitorWaited handler) {
         return ((ChainingMonitorWaitedRequest)EventRequestProxy.proxy(
                 erm.createMonitorWaitedRequest(),
                 ChainingMonitorWaitedRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createMonitorWaitRequest
+     */
     public ChainingMonitorWaitRequest monitorWaitRequest() {
         return monitorWaitRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createMonitorWaitRequest
+     */
     public ChainingMonitorWaitRequest monitorWaitRequest(OnMonitorWait handler) {
         return ((ChainingMonitorWaitRequest)EventRequestProxy.proxy(
                 erm.createMonitorWaitRequest(),
                 ChainingMonitorWaitRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createStepRequest
+     */
     public ChainingStepRequest stepRequest( ThreadReference thread,
                                             int size,
                                             int depth ) {
         return stepRequest( thread, size, depth , null);
     }
 
+    /**
+     * @see EventRequestManager#createStepRequest
+     */
     public ChainingStepRequest stepRequest( ThreadReference thread,
                                             int size,
                                             int depth,
@@ -258,30 +359,48 @@ public class JDIScript {
                 ChainingStepRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createThreadDeathRequest
+     */
     public ChainingThreadDeathRequest threadDeathRequest() {
         return threadDeathRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createThreadDeathRequest
+     */
     public ChainingThreadDeathRequest threadDeathRequest(OnThreadDeath handler) {
         return ((ChainingThreadDeathRequest)EventRequestProxy.proxy(
                 erm.createThreadDeathRequest(),
                 ChainingThreadDeathRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createThreadStartRequest
+     */
     public ChainingThreadStartRequest threadStartRequest() {
         return threadStartRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createThreadStartRequest
+     */
     public ChainingThreadStartRequest threadStartRequest(OnThreadStart handler) {
         return ((ChainingThreadStartRequest)EventRequestProxy.proxy(
                 erm.createThreadStartRequest(),
                 ChainingThreadStartRequest.class)).addHandler(handler);
     }
 
+    /**
+     * @see EventRequestManager#createVMDeathRequest
+     */
     public ChainingVMDeathRequest vmDeathRequest() {
         return vmDeathRequest(null);
     }
 
+    /**
+     * @see EventRequestManager#createVMDeathRequest
+     */
     public ChainingVMDeathRequest vmDeathRequest(OnVMDeath handler) {
         return ((ChainingVMDeathRequest)EventRequestProxy.proxy(
                 erm.createVMDeathRequest(),
