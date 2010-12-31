@@ -1,5 +1,6 @@
 package org.jdiscript;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,11 +10,8 @@ import org.jdiscript.events.*;
 import org.jdiscript.handlers.*;
 import org.jdiscript.requests.*;
 
-import com.sun.jdi.Field;
-import com.sun.jdi.Location;
-import com.sun.jdi.ReferenceType;
-import com.sun.jdi.ThreadReference;
-import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.*;
+import com.sun.jdi.event.LocatableEvent;
 import com.sun.jdi.request.*;
 
 /**
@@ -491,5 +489,54 @@ public class JDIScript {
 
     public void deleteEventRequests(List<? extends EventRequest> eventRequests) {
         erm.deleteEventRequests(eventRequests);
+    }
+
+    /**
+     * Print a stacktrace of the given event's thread to stdout.
+     *
+     * @param event   The event to print a trace for.
+     */
+    public void printTrace(LocatableEvent event) {
+        printTrace(event, null, System.out);
+    }
+
+    /**
+     * Print a stacktrace of the given event's thread to stdout with
+     * a message.
+     *
+     * @param event   The event to print a trace for.
+     * @param msg     A message to print with the stacktrace.
+     */
+    public void printTrace(LocatableEvent event, String msg) {
+        printTrace(event, msg, System.out);
+    }
+
+    /**
+     * Print a stacktrace of the given event's thread to the given stream
+     * with a message.
+     *
+     * @param event   The event to print a trace for.
+     * @param msg     A message to print with the stacktrace.
+     * @param ps      The stream to print the trace to.
+     */
+    public void printTrace(LocatableEvent event, String msg, PrintStream ps) {
+        long ts = System.currentTimeMillis();
+        ThreadReference thread = event.thread();
+        ps.printf("%s: Stacktrace for %s(name='%s', id='%s'): %s\n",
+                  ts,
+                  thread.type().name(),
+                  thread.name(),
+                  thread.uniqueID(),
+                  (msg == null) ? "" : msg);
+        try {
+            for(StackFrame frame: thread.frames()) {
+                ps.println("    " + frame.location());
+            }
+        }
+        catch(IncompatibleThreadStateException e) {
+            ps.println("    ** IncompatibleThreadStateException - " +
+                       "thread not suspended in target VM, " +
+                       "could not retrieve frames **");
+        }
     }
 }
