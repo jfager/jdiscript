@@ -31,22 +31,22 @@ public class HelloWorldExample {
 
         final JDIScript j = new JDIScript(vm);
         j.run(new OnVMStart() {
-            public void exec(VMStartEvent e) {
+            public void vmStart(VMStartEvent e) {
                 j.classPrepareRequest()
                  .addClassFilter("org.jdiscript.example.HelloWorld")
                  .addHandler(new OnClassPrepare() {
-                     public void exec(ClassPrepareEvent e) {
+                     public void classPrepare(ClassPrepareEvent e) {
                          Field field = e.referenceType().fieldByName("helloTo");
                          j.accessWatchpointRequest(field)
                           .addHandler(new OnAccessWatchpoint() {
-                              public void exec(AccessWatchpointEvent e) {
+                              public void accessWatchpoint(AccessWatchpointEvent e) {
                                   j.stepRequest(e.thread(),
                                                 StepRequest.STEP_MIN,
                                                 StepRequest.STEP_OVER)
                                    .putProperty("field", e.field())
                                    .putProperty("object", e.object())
                                    .addHandler(new OnStep() {
-                                       public void exec(StepEvent se) {
+                                       public void step(StepEvent se) {
                                            StringReference alttobe = se.virtualMachine().mirrorOf("Groovy");
                                            StepRequest req = (StepRequest)se.request();
                                            req.disable();

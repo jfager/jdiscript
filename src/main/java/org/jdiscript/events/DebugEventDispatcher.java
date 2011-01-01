@@ -121,13 +121,13 @@ public class DebugEventDispatcher {
     private void doVMEventDispatch(Event event, DebugEventHandler handler) {
         if(event instanceof VMStartEvent &&
            handler instanceof OnVMStart) {
-            ((OnVMStart)handler).exec((VMStartEvent)event);
+            ((OnVMStart)handler).vmStart((VMStartEvent)event);
         } else if(event instanceof VMDisconnectEvent &&
                   handler instanceof OnVMDisconnect) {
-            ((OnVMDisconnect)handler).exec((VMDisconnectEvent)event);
+            ((OnVMDisconnect)handler).vmDisconnect((VMDisconnectEvent)event);
         } else if(event instanceof VMDeathEvent &&
                   handler instanceof OnVMDeath) {
-            ((OnVMDeath)handler).exec((VMDeathEvent)event);
+            ((OnVMDeath)handler).vmDeath((VMDeathEvent)event);
         }
     }
 
@@ -135,91 +135,95 @@ public class DebugEventDispatcher {
     private void doFullDispatch(Event event, DebugEventHandler handler) {
         if(event instanceof BreakpointEvent &&
            handler instanceof OnBreakpoint) {
-            ((OnBreakpoint)handler).exec((BreakpointEvent)event);
+            ((OnBreakpoint)handler).breakpoint((BreakpointEvent)event);
         }
 
         else if(event instanceof StepEvent &&
                 handler instanceof OnStep) {
-            ((OnStep)handler).exec((StepEvent)event);
+            ((OnStep)handler).step((StepEvent)event);
         }
 
         else if(event instanceof ExceptionEvent &&
                 handler instanceof OnException) {
-            ((OnException)handler).exec((ExceptionEvent)event);
+            ((OnException)handler).exception((ExceptionEvent)event);
         }
 
         //Method Events
         else if(event instanceof MethodEntryEvent &&
                 handler instanceof OnMethodEntry) {
-            ((OnMethodEntry)handler).exec((MethodEntryEvent)event);
+            ((OnMethodEntry)handler).methodEntry((MethodEntryEvent)event);
         } else if(event instanceof MethodExitEvent &&
                   handler instanceof OnMethodExit) {
-            ((OnMethodExit)handler).exec((MethodExitEvent)event);
+            ((OnMethodExit)handler).methodExit((MethodExitEvent)event);
         }
 
         //Monitor Events
         else if(event instanceof MonitorWaitEvent &&
                 handler instanceof OnMonitorWait) {
-            ((OnMonitorWait)handler).exec((MonitorWaitEvent)event);
+            ((OnMonitorWait)handler).monitorWait((MonitorWaitEvent)event);
         } else if(event instanceof MonitorWaitedEvent &&
                   handler instanceof OnMonitorWaited) {
-            ((OnMonitorWaited)handler).exec((MonitorWaitedEvent)event);
+            ((OnMonitorWaited)handler).monitorWaited((MonitorWaitedEvent)event);
         } else if(event instanceof MonitorContendedEnterEvent &&
                   handler instanceof OnMonitorContendedEnter) {
-            ((OnMonitorContendedEnter)handler).exec((MonitorContendedEnterEvent)event);
+            ((OnMonitorContendedEnter)handler).monitorContendedEnter(
+                (MonitorContendedEnterEvent)event);
         } else if(event instanceof MonitorContendedEnteredEvent &&
                   handler instanceof OnMonitorContendedEntered) {
-            ((OnMonitorContendedEntered)handler).exec((MonitorContendedEnteredEvent)event);
+            ((OnMonitorContendedEntered)handler).monitorContendedEntered(
+                (MonitorContendedEnteredEvent)event);
         }
 
         //Watchpoint Events
         else if(event instanceof AccessWatchpointEvent &&
                 handler instanceof OnAccessWatchpoint) {
-            ((OnAccessWatchpoint)handler).exec((AccessWatchpointEvent)event);
+            ((OnAccessWatchpoint)handler).accessWatchpoint(
+                (AccessWatchpointEvent)event);
         } else if(event instanceof ModificationWatchpointEvent &&
                   handler instanceof OnModificationWatchpoint) {
-            ((OnModificationWatchpoint)handler).exec((ModificationWatchpointEvent)event);
+            ((OnModificationWatchpoint)handler).modificationWatchpoint(
+                (ModificationWatchpointEvent)event);
         }
 
         //Threading Events
         else if(event instanceof ThreadStartEvent &&
                 handler instanceof OnThreadStart) {
-            ((OnThreadStart)handler).exec((ThreadStartEvent)event);
+            ((OnThreadStart)handler).threadStart((ThreadStartEvent)event);
         } else if(event instanceof ThreadDeathEvent &&
                   handler instanceof OnThreadDeath) {
-            ((OnThreadDeath)handler).exec((ThreadDeathEvent)event);
+            ((OnThreadDeath)handler).threadDeath((ThreadDeathEvent)event);
         }
 
         //Class Events
         else if(event instanceof ClassPrepareEvent &&
                 handler instanceof OnClassPrepare) {
-            ((OnClassPrepare)handler).exec((ClassPrepareEvent)event);
+            ((OnClassPrepare)handler).classPrepare((ClassPrepareEvent)event);
         } else if(event instanceof ClassUnloadEvent &&
                   handler instanceof OnClassUnload) {
-            ((OnClassUnload)handler).exec((ClassUnloadEvent)event);
+            ((OnClassUnload)handler).classUnload((ClassUnloadEvent)event);
         }
 
         //VM Events
         else if(event instanceof VMStartEvent &&
                 handler instanceof OnVMStart) {
-            ((OnVMStart)handler).exec((VMStartEvent)event);
+            ((OnVMStart)handler).vmStart((VMStartEvent)event);
         } else if(event instanceof VMDisconnectEvent &&
                   handler instanceof OnVMDisconnect) {
-            ((OnVMDisconnect)handler).exec((VMDisconnectEvent)event);
+            ((OnVMDisconnect)handler).vmDisconnect((VMDisconnectEvent)event);
         } else if(event instanceof VMDeathEvent &&
                   handler instanceof OnVMDeath) {
-            ((OnVMDeath)handler).exec((VMDeathEvent)event);
+            ((OnVMDeath)handler).vmDeath((VMDeathEvent)event);
         }
 
         //Catchalls
         else if(event instanceof WatchpointEvent &&
                 handler instanceof OnWatchpoint) {
-            ((OnWatchpoint)handler).exec((WatchpointEvent)event);
+            ((OnWatchpoint)handler).watchpoint((WatchpointEvent)event);
         } else if(event instanceof LocatableEvent &&
                   handler instanceof OnLocatable) {
-            ((OnLocatable)handler).exec((LocatableEvent)event);
+            ((OnLocatable)handler).locatable((LocatableEvent)event);
         } else {
-            ((OnEvent)handler).exec(event);
+            ((OnEvent)handler).event(event);
         }
     }
 }

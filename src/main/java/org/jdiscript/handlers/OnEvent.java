@@ -4,5 +4,5 @@ import com.sun.jdi.event.Event;
 
 public interface OnEvent extends DebugEventHandler
 {
-    void exec(Event event);
+    void event(Event event);
 }

@@ -4,5 +4,5 @@ import com.sun.jdi.event.VMDisconnectEvent;
 
 public interface OnVMDisconnect extends DebugEventHandler
 {
-    void exec(VMDisconnectEvent event);
+    void vmDisconnect(VMDisconnectEvent event);
 }

@@ -4,5 +4,5 @@ import com.sun.jdi.event.ExceptionEvent;
 
 public interface OnException extends DebugLocatableHandler
 {
-    void exec(ExceptionEvent e);
+    void exception(ExceptionEvent e);
 }

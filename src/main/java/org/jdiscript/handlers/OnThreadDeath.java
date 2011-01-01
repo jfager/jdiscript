@@ -4,5 +4,5 @@ import com.sun.jdi.event.ThreadDeathEvent;
 
 public interface OnThreadDeath extends DebugEventHandler
 {
-    void exec(ThreadDeathEvent event);
+    void threadDeath(ThreadDeathEvent event);
 }

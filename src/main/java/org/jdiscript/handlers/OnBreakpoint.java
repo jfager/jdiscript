@@ -4,5 +4,5 @@ import com.sun.jdi.event.BreakpointEvent;
 
 public interface OnBreakpoint extends DebugLocatableHandler
 {
-    void exec(BreakpointEvent event);
+    void breakpoint(BreakpointEvent event);
 }

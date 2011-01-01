@@ -113,7 +113,7 @@ public class TraceExampleHandler extends BaseEventHandler {
     }
 
     @Override
-    public void exec(VMStartEvent event) {
+    public void vmStart(VMStartEvent event) {
         System.out.println("-- VM Started --");
         setEventRequests(false);
         try {
@@ -123,32 +123,32 @@ public class TraceExampleHandler extends BaseEventHandler {
 
     // Forward event for thread specific processing
     @Override
-    public void exec(MethodEntryEvent event) {
-        threadTrace(event.thread()).exec(event);
+    public void methodEntry(MethodEntryEvent event) {
+        threadTrace(event.thread()).methodEntry(event);
     }
 
     // Forward event for thread specific processing
     @Override
-    public void exec(MethodExitEvent event) {
-        threadTrace(event.thread()).exec(event);
+    public void methodExit(MethodExitEvent event) {
+        threadTrace(event.thread()).methodExit(event);
     }
 
     // Forward event for thread specific processing
     @Override
-    public void exec(StepEvent event) {
-        threadTrace(event.thread()).exec(event);
+    public void step(StepEvent event) {
+        threadTrace(event.thread()).step(event);
     }
 
     // Forward event for thread specific processing
     public void fieldWatch(ModificationWatchpointEvent event) {
-        threadTrace(event.thread()).exec(event);
+        threadTrace(event.thread()).modificationWatchpoint(event);
     }
 
     @Override
-    public void exec(ThreadDeathEvent event) {
+    public void threadDeath(ThreadDeathEvent event) {
         ThreadTrace trace = traceMap.get(event.thread());
         if (trace != null) { // only want threads we care about
-            trace.exec(event); // Forward event
+            trace.threadDeath(event); // Forward event
         }
     }
 
@@ -156,7 +156,7 @@ public class TraceExampleHandler extends BaseEventHandler {
      * A new class has been loaded. Set watchpoints on each of its fields
      */
     @Override
-    public void exec(ClassPrepareEvent event) {
+    public void classPrepare(ClassPrepareEvent event) {
         List<Field> fields = event.referenceType().visibleFields();
         for (Field field : fields) {
             ChainingModificationWatchpointRequest req
@@ -171,21 +171,21 @@ public class TraceExampleHandler extends BaseEventHandler {
     }
 
     @Override
-    public void exec(ExceptionEvent event) {
+    public void exception(ExceptionEvent event) {
         ThreadTrace trace = traceMap.get(event.thread());
         if (trace != null) { // only want threads we care about
-            trace.exec(event); // Forward event
+            trace.exception(event); // Forward event
         }
     }
 
     @Override
-    public void exec(VMDeathEvent event) {
+    public void vmDeath(VMDeathEvent event) {
         vmDied = true;
         System.out.println("-- The application exited --");
     }
 
     @Override
-    public void exec(VMDisconnectEvent event) {
+    public void vmDisconnect(VMDisconnectEvent event) {
         if (!vmDied) {
             System.out.println("-- The application has been disconnected --");
         }
@@ -214,26 +214,26 @@ public class TraceExampleHandler extends BaseEventHandler {
         }
 
         @Override
-        public void exec(MethodEntryEvent event) {
+        public void methodEntry(MethodEntryEvent event) {
             println(event.method().name() + "  --  "
                     + event.method().declaringType().name());
             indent.append("| ");
         }
 
         @Override
-        public void exec(MethodExitEvent event) {
+        public void methodExit(MethodExitEvent event) {
             indent.setLength(indent.length() - 2);
         }
 
         @Override
-        public void exec(ModificationWatchpointEvent event) {
+        public void modificationWatchpoint(ModificationWatchpointEvent event) {
             Field field = event.field();
             Value value = event.valueToBe();
             println("    " + field.name() + " = " + value);
         }
 
         @Override
-        public void exec(ExceptionEvent event) {
+        public void exception(ExceptionEvent event) {
             println("Exception: " + event.exception() + " catch: "
                     + event.catchLocation());
 
@@ -247,7 +247,7 @@ public class TraceExampleHandler extends BaseEventHandler {
 
         // Step to exception catch
         @Override
-        public void exec(StepEvent event) {
+        public void step(StepEvent event) {
             // Adjust call depth
             int cnt = 0;
             indent = new StringBuffer(baseIndent);
@@ -263,7 +263,7 @@ public class TraceExampleHandler extends BaseEventHandler {
         }
 
         @Override
-        public void exec(ThreadDeathEvent event) {
+        public void threadDeath(ThreadDeathEvent event) {
             indent = new StringBuffer(baseIndent);
             println("====== " + thread.name() + " end ======");
         }

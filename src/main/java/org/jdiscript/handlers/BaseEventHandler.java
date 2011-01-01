@@ -38,87 +38,87 @@ public class BaseEventHandler
         // do nothing
     }
 
-    public void exec(AccessWatchpointEvent e) {
+    public void accessWatchpoint(AccessWatchpointEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(BreakpointEvent e) {
+    public void breakpoint(BreakpointEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(ClassPrepareEvent e) {
+    public void classPrepare(ClassPrepareEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(ClassUnloadEvent e) {
+    public void classUnload(ClassUnloadEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(Event e) {
+    public void event(Event e) {
         unhandledEvent(e);
     }
 
-    public void exec(ExceptionEvent e) {
+    public void exception(ExceptionEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(LocatableEvent e) {
+    public void locatable(LocatableEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(MethodEntryEvent e) {
+    public void methodEntry(MethodEntryEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(MethodExitEvent e) {
+    public void methodExit(MethodExitEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(ModificationWatchpointEvent e) {
+    public void modificationWatchpoint(ModificationWatchpointEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(MonitorContendedEnterEvent e) {
+    public void monitorContendedEnter(MonitorContendedEnterEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(MonitorContendedEnteredEvent e){
+    public void monitorContendedEntered(MonitorContendedEnteredEvent e){
         unhandledEvent(e);
     }
 
-    public void exec(MonitorWaitEvent e) {
+    public void monitorWait(MonitorWaitEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(MonitorWaitedEvent e) {
+    public void monitorWaited(MonitorWaitedEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(StepEvent e) {
+    public void step(StepEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(ThreadDeathEvent e) {
+    public void threadDeath(ThreadDeathEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(ThreadStartEvent e) {
+    public void threadStart(ThreadStartEvent e) {
         unhandledEvent(e);
     }
 
-    public void exec(VMDeathEvent e) {
+    public void vmDeath(VMDeathEvent e) {
         //do nothing
     }
 
-    public void exec(VMDisconnectEvent e) {
+    public void vmDisconnect(VMDisconnectEvent e) {
         //do nothing
     }
 
-    public void exec(VMStartEvent e) {
+    public void vmStart(VMStartEvent e) {
         //do nothing
     }
 
-    public void exec(WatchpointEvent e) {
+    public void watchpoint(WatchpointEvent e) {
         unhandledEvent(e);
     }
 
