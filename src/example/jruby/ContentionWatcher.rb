@@ -17,7 +17,7 @@ req = $j.monitorContendedEnteredRequest {|ev|
 
 class StartNotice
   include org.jdiscript.handlers.OnVMStart
-  def exec(event)
+  def vmStart(event)
     puts "Got StartEvent"
   end
 end
