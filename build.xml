@@ -1,72 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="build" name="jdiscript">
-    <property file="build.properties" />
-    <property name="build.src" value="${basedir}/src" />
-    <property name="build.out" value="${basedir}/build" />
-    <property name="build.classes" value="${build.out}/classes" />
-    <property name="build.apidocs" value="${build.out}/apidocs" />
-    <property name="final.name" value="jdiscript" />
+  <property file="build.properties" />
+  <property name="build.src" value="${basedir}/src" />
+  <property name="build.out" value="${basedir}/build" />
+  <property name="build.classes" value="${build.out}/classes" />
+  <property name="build.apidocs" value="${build.out}/apidocs" />
+  <property name="final.name" value="jdiscript" />
 
-    <target name="init">
-        <mkdir dir="${build.classes}" />
-    </target>
+  <target name="init">
+    <mkdir dir="${build.classes}" />
+  </target>
 
-    <target name="build" depends="init">
-        <javac destdir="${build.classes}">
-            <src path="${build.src}" />
-        </javac>
-    </target>
+  <target name="build" depends="init">
+    <javac destdir="${build.classes}">
+      <src path="${build.src}" />
+    </javac>
+  </target>
 
-    <target name="jar" depends="build">
-        <mkdir dir="${build.classes}/META-INF" />
-        <jar jarfile="${build.out}/${final.name}.jar"
-             basedir="${build.classes}" />
-    </target>
+  <target name="jar" depends="build">
+    <mkdir dir="${build.classes}/META-INF" />
+    <jar jarfile="${build.out}/${final.name}.jar"
+         basedir="${build.classes}" />
+  </target>
 
-    <target name="doc">
-        <mkdir dir="${build.apidocs}" />
-        <javadoc sourcepath="${build.src}/main/java/"
-                 destdir="${build.apidocs}">
-          <link href="http://download.oracle.com/javase/6/docs/api/"/>
-          <link href="http://download.oracle.com/javase/6/docs/jdk/api/jpda/jdi/"/>
-        </javadoc>
-    </target>
+  <target name="doc">
+    <mkdir dir="${build.apidocs}" />
+    <javadoc sourcepath="${build.src}/main/java/"
+             destdir="${build.apidocs}">
+      <link href="http://download.oracle.com/javase/6/docs/api/"/>
+      <link href="http://download.oracle.com/javase/6/docs/jdk/api/jpda/jdi/"/>
+    </javadoc>
+  </target>
 
-    <target name="clean">
-        <delete dir="${build.out}" />
-    </target>
+  <target name="clean">
+    <delete dir="${build.out}" />
+  </target>
 
-    <!-- Set the scala.home property in your build.properties file -->
-    <target name="scala.init">
-        <property name="scala-library.jar"
-                  value="${scala.home}/lib/scala-library.jar" />
-        <property name="scala-compiler.jar"
-                  value="${scala.home}/lib/scala-compiler.jar" />
-        <path id="scala.build.classpath">
-            <pathelement location="${scala-library.jar}" />
-            <pathelement location="${scala-compiler.jar}" />
-            <pathelement location="${build.classes}" />
-        </path>
-        <taskdef resource="scala/tools/ant/antlib.xml">
-            <classpath>
-                <pathelement location="${scala-compiler.jar}" />
-                <pathelement location="${scala-library.jar}" />
-            </classpath>
-        </taskdef>
-    </target>
+  <!-- Set the scala.home property in your build.properties file -->
+  <target name="scala.init">
+    <property name="scala-library.jar"
+              value="${scala.home}/lib/scala-library.jar" />
+    <property name="scala-compiler.jar"
+              value="${scala.home}/lib/scala-compiler.jar" />
+    <path id="scala.build.classpath">
+      <pathelement location="${scala-library.jar}" />
+      <pathelement location="${scala-compiler.jar}" />
+      <pathelement location="${build.classes}" />
+    </path>
+    <taskdef resource="scala/tools/ant/antlib.xml">
+      <classpath>
+        <pathelement location="${scala-compiler.jar}" />
+        <pathelement location="${scala-library.jar}" />
+      </classpath>
+    </taskdef>
+  </target>
 
-    <target name="scala.build" depends="build, scala.init">
-        <scalac srcdir="${build.src}"
-                destdir="${build.classes}"
-                classpathref="scala.build.classpath">
-          <include name="**/*.scala" />
-        </scalac>
-    </target>
+  <target name="scala.build" depends="build, scala.init">
+    <scalac srcdir="${build.src}"
+            destdir="${build.classes}"
+            classpathref="scala.build.classpath">
+      <include name="**/*.scala" />
+    </scalac>
+  </target>
 
-    <target name="scala.jar" depends="scala.build">
-        <mkdir dir="${build.classes}/META-INF" />
-        <jar jarfile="${build.out}/${final.name}.scala.jar"
-             basedir="${build.classes}" />
-    </target>
+  <target name="scala.jar" depends="scala.build">
+    <mkdir dir="${build.classes}/META-INF" />
+    <jar jarfile="${build.out}/${final.name}.scala.jar"
+         basedir="${build.classes}" />
+  </target>
 
 </project>
