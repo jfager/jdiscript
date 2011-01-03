@@ -11,29 +11,31 @@ import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.StepRequest
 
+// The HelloWorld java example code prints out "Hello, <someone>" twice
+// for 3 different values of <someone>. This scripts changes the second
+// printout for each to "Hello, Groovy".
+
 String OPTIONS = """
-    -cp ./target/classes/
+    -cp ../../../build/jdiscript.jar
 """
 String MAIN = "org.jdiscript.example.HelloWorld"
 VirtualMachine vm = new VMLauncher(OPTIONS, MAIN).start()
 
 JDIScript j = new JDIScript(vm);
-j.run({
-    j.classPrepareRequest({
-         def field = it.referenceType().fieldByName("helloTo")
-         j.accessWatchpointRequest(field, {
-              def obj = it.object()
-              j.stepRequest(it.thread(),
-                            StepRequest.STEP_MIN,
-                            StepRequest.STEP_OVER, {
-                   StringReference alttobe = it.virtualMachine().mirrorOf("Groovy")
-                   it.request().disable()
-                   obj.setValue(field, alttobe)
-                } as OnStep).enable()
-          } as OnAccessWatchpoint).enable()
-     } as OnClassPrepare).addClassFilter("org.jdiscript.example.HelloWorld")
-                         .enable()
-} as OnVMStart)
+
+j.onFieldAccess("org.jdiscript.example.HelloWorld", "helloTo", {
+    def obj = it.object()
+    def field = it.field()
+    j.stepRequest(it.thread(),
+                  StepRequest.STEP_MIN,
+                  StepRequest.STEP_OVER, {
+        StringReference alttobe = j.vm().mirrorOf("Groovy")
+        it.request().disable()
+        obj.setValue(field, alttobe)
+    } as OnStep).enable()
+} as OnAccessWatchpoint)
+
+j.run()
 
 
 

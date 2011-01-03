@@ -11,7 +11,7 @@ import org.jdiscript.handlers.*;
 import org.jdiscript.requests.*;
 
 import com.sun.jdi.*;
-import com.sun.jdi.event.LocatableEvent;
+import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 
 /**
@@ -32,6 +32,10 @@ import com.sun.jdi.request.*;
  *  <li>
  *    Runs the associated VM by setting up and starting the jdiscript
  *    {@link DebugEventDispatcher} and {@link EventThread}.
+ *  </li>
+ *  <li>
+ *    Provides convenience methods for specifying handlers for field
+ *    access and modification.
  *  </li>
  * </ul>
  */
@@ -539,4 +543,69 @@ public class JDIScript {
                        "could not retrieve frames **");
         }
     }
+
+    /**
+     * Shortcut for the common pattern of responding to field accesses.
+     * <p>
+     * Builds a {@link ClassPrepareRequest}, filters it for the given
+     * class name, and adds an {@link OnClassPrepare} handler that
+     * creates an {@link AccessWatchpointRequest} for the given field name.
+     * Any field accesses are in turn handled by the given handler.
+     * <p>
+     * TODO: what should this return?
+     *
+     * @param className  A class name suitable for use by
+     *                   {@link ClassPrepareRequest#addClassFilter(String)}
+     * @param fieldName  A field name suitable for use by
+     *                   {@link ReferenceType#fieldByName(String)}.  Must be
+     *                   a field belonging to all classes matched by className.
+     * @param handler    The callback to execute when the field is accessed.
+     */
+    public void onFieldAccess(final String className,
+                              final String fieldName,
+                              final OnAccessWatchpoint handler) {
+        classPrepareRequest()
+            .addClassFilter(className)
+            .addHandler(new OnClassPrepare() {
+                    public void classPrepare(ClassPrepareEvent ev) {
+                        Field field = ev.referenceType().fieldByName(fieldName);
+                        accessWatchpointRequest(field, handler)
+                            .enable();
+                    }
+                })
+            .enable();
+    }
+
+    /**
+     * Shortcut for the common pattern of responding to field modifications.
+     * <p>
+     * Builds a {@link ClassPrepareRequest}, filters it for the given
+     * class name, and adds an {@link OnClassPrepare} handler that
+     * creates a {@link ModificationWatchpointRequest} for the given field name.
+     * Any field modifications are in turn handled by the given handler.
+     * <p>
+     * TODO: what should this return?
+     *
+     * @param className  A class name suitable for use by
+     *                   {@link ClassPrepareRequest#addClassFilter(String)}
+     * @param fieldName  A field name suitable for use by
+     *                   {@link ReferenceType#fieldByName(String)}.  Must be
+     *                   a field belonging to all classes matched by className.
+     * @param handler    The callback to execute when the field is modified.
+     */
+    public void onFieldModification(final String className,
+                                    final String fieldName,
+                                    final OnModificationWatchpoint handler) {
+        classPrepareRequest()
+            .addClassFilter(className)
+            .addHandler(new OnClassPrepare() {
+                    public void classPrepare(ClassPrepareEvent ev) {
+                        Field field = ev.referenceType().fieldByName(fieldName);
+                        modificationWatchpointRequest(field, handler)
+                            .enable();
+                    }
+                })
+            .enable();
+    }
+
 }
