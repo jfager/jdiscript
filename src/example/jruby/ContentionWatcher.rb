@@ -6,11 +6,11 @@ java_import org.jdiscript.util.VMSocketAttacher
 vm = VMSocketAttacher.new(12345).attach
 $j = JDIScript.new vm
 
-req = $j.monitorContendedEnterRequest {|ev|
+$j.monitorContendedEnterRequest {|ev|
   $j.printTrace ev, "ContendedEnter for #{ev.monitor}"
 }.enable
 
-req = $j.monitorContendedEnteredRequest {|ev|
+$j.monitorContendedEnteredRequest {|ev|
   timestamp = java.lang.System.currentTimeMillis
   puts "#{timestamp}: #{ev.thread}: ContendedEntered for #{ev.monitor}"
 }.enable
