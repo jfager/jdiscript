@@ -1,8 +1,7 @@
-package org.jdiscript
+package org.jdiscript.example
 
-import org.jdiscript.util.VMLauncher;
-import com.sun.jdi.VirtualMachine;
-
+import org.jdiscript.util.VMLauncher
+import com.sun.jdi.VirtualMachine
 
 class TomcatStarter {
     static final String TOMCAT = "/Users/jason/java_shite/apache-tomcat-5.5.27-eclipse"
