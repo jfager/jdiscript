@@ -1,6 +1,7 @@
 package org.jdiscript.util;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
@@ -50,9 +51,9 @@ public class VMLauncher {
     }
 
     public VirtualMachine start()
-        throws     IOException,
-                IllegalConnectorArgumentsException,
-                VMStartException
+        throws IOException,
+               IllegalConnectorArgumentsException,
+               VMStartException
     {
         VirtualMachineManager vmm = Bootstrap.virtualMachineManager();
         LaunchingConnector connector = vmm.defaultConnector();
@@ -60,28 +61,30 @@ public class VMLauncher {
         cArgs.get("options").setValue(options);
         cArgs.get("main").setValue(main);
         final VirtualMachine vm = connector.launch(cArgs);
-        redirectOutput(vm);
+
+        final Thread outThread = redirect("Subproc stdout",
+                                          vm.process().getInputStream(),
+                                          out);
+        final Thread errThread = redirect("Subproc stderr",
+                                          vm.process().getErrorStream(),
+                                          err);
         if(killOnShutdown) {
             Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() { vm.process().destroy(); }
+                public void run() {
+                    outThread.interrupt();
+                    errThread.interrupt();
+                    vm.process().destroy();
+                }
             });
         }
+
         return vm;
     }
 
-    private void redirectOutput(VirtualMachine vm) {
-        Process process = vm.process();
-
-        Thread outThread = new StreamRedirectThread("output reader",
-                                                    process.getInputStream(),
-                                                    out);
-        outThread.setDaemon(true);
-        outThread.start();
-
-        Thread errThread = new StreamRedirectThread("error reader",
-                                                    process.getErrorStream(),
-                                                    err);
-        errThread.setDaemon(true);
-        errThread.start();
+    private Thread redirect(String name, InputStream in, OutputStream out) {
+        Thread t = new StreamRedirectThread(name, in, out);
+        t.setDaemon(true);
+        t.start();
+        return t;
     }
 }

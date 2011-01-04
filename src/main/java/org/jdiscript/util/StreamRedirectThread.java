@@ -79,14 +79,16 @@ class StreamRedirectThread extends Thread {
     public void run() {
         try {
             String str = "";
-            while (str != null) {
+            while (str != null && !isInterrupted()) {
                 str = in.readLine();
                 if(str != null) {
                     out.println(str);
                 }
             }
         } catch (IOException exc) {
-            exc.printStackTrace();
+            if(!isInterrupted()) {
+                exc.printStackTrace();
+            }
         }
     }
 }
