@@ -1,11 +1,12 @@
-
-package org.jdiscript
+package org.jdiscript.example
 
 import org.jdiscript.handlers.OnMonitorContendedEnter
 import org.jdiscript.handlers.OnVMStart
-import com.sun.jdi.ObjectReference;
-import com.sun.jdi.ThreadReference;
-import com.sun.jdi.VirtualMachine;
+import org.jdiscript.JDIScript
+
+import com.sun.jdi.ObjectReference
+import com.sun.jdi.ThreadReference
+import com.sun.jdi.VirtualMachine
 
 VirtualMachine vm = TomcatStarter.vm()
 JDIScript j = new JDIScript(vm)
@@ -38,6 +39,7 @@ j.run(10 * 1000)
 
 println "Shutting down"
 vm.process().destroy()
+
 println "Contention info:"
 contended.each { k,v ->
     println "MonitorID: ${k}, Hits: ${v.counter}, Locations: ${v.locations}"
