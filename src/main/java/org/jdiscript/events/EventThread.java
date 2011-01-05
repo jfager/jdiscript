@@ -93,7 +93,7 @@ public class EventThread extends Thread {
      * We need to flush the event queue, dealing only with exit events (VMDeath,
      * VMDisconnect) so that we terminate correctly.
      */
-    synchronized void handleDisconnectedException() {
+    private void handleDisconnectedException() {
         EventQueue queue = vm.eventQueue();
         boolean connected = true;
         while (connected) {
