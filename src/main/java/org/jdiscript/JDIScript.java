@@ -682,10 +682,10 @@ public class JDIScript {
      *                   className.
      * @param handler    The callback to execute when the method is invoked.
      */
-    public void onFieldModification(final String className,
-                                    final String methodName,
-                                    final String methodSig,
-                                    final OnBreakpoint handler) {
+    public void onMethodInvocation(final String className,
+                                   final String methodName,
+                                   final String methodSig,
+                                   final OnBreakpoint handler) {
         onClassPrep(className, new OnClassPrepare() {
                 public void classPrepare(ClassPrepareEvent ev) {
                     List<Method> methods
