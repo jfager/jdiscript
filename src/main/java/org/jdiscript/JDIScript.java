@@ -545,6 +545,27 @@ public class JDIScript {
     }
 
     /**
+     * Shortcut for the common pattern of decorating a particular class
+     * on preparation.
+     * <p>
+     * Builds a {@link ClassPrepareRequest}, filters it for the given
+     * class name, and adds the given {@link OnClassPrepare} handler.
+     * <p>
+     * TODO: what should this return?
+     *
+     * @param className  A class name suitable for use by
+     *                   {@link ClassPrepareRequest#addClassFilter(String)}
+     * @param handler    The callback to execute when the class is prepped.
+     */
+    public void onClassPrep(final String className,
+                            final OnClassPrepare handler) {
+        classPrepareRequest()
+            .addClassFilter(className)
+            .addHandler(handler)
+            .enable();
+    }
+
+    /**
      * Shortcut for the common pattern of responding to field accesses.
      * <p>
      * Builds a {@link ClassPrepareRequest}, filters it for the given
@@ -564,16 +585,13 @@ public class JDIScript {
     public void onFieldAccess(final String className,
                               final String fieldName,
                               final OnAccessWatchpoint handler) {
-        classPrepareRequest()
-            .addClassFilter(className)
-            .addHandler(new OnClassPrepare() {
-                    public void classPrepare(ClassPrepareEvent ev) {
-                        Field field = ev.referenceType().fieldByName(fieldName);
-                        accessWatchpointRequest(field, handler)
-                            .enable();
-                    }
-                })
-            .enable();
+        onClassPrep(className, new OnClassPrepare() {
+                public void classPrepare(ClassPrepareEvent ev) {
+                    Field field = ev.referenceType().fieldByName(fieldName);
+                    accessWatchpointRequest(field, handler)
+                        .enable();
+                }
+            });
     }
 
     /**
@@ -596,16 +614,89 @@ public class JDIScript {
     public void onFieldModification(final String className,
                                     final String fieldName,
                                     final OnModificationWatchpoint handler) {
-        classPrepareRequest()
-            .addClassFilter(className)
-            .addHandler(new OnClassPrepare() {
-                    public void classPrepare(ClassPrepareEvent ev) {
-                        Field field = ev.referenceType().fieldByName(fieldName);
-                        modificationWatchpointRequest(field, handler)
+        onClassPrep(className, new OnClassPrepare() {
+                public void classPrepare(ClassPrepareEvent ev) {
+                    Field field = ev.referenceType().fieldByName(fieldName);
+                    modificationWatchpointRequest(field, handler)
+                        .enable();
+                }
+            });
+    }
+
+    /**
+     * Shortcut for the common pattern of responding to particular method
+     * invocations.
+     * <p>
+     * You would hope this could be handled with a simple
+     * {@link MethodEntryRequest}, but unfortunately, it can't.
+     * MethodEntryRequests can be filtered by class, instance, and
+     * thread, but not down to individual methods.
+     * <p>
+     * This builds a {@link ClassPrepareRequest}, filters it for the
+     * given class name, and adds an {@link OnClassPrepare} handler that
+     * creates a {@link BreakpointRequest} for the given method name.
+     * The resulting BreakpointEvent is in turn handled by the
+     * given handler.  Note that if you refer to an overloaded method,
+     * all matching methods will have a breakpoint set and be handled by
+     * the given handler.  For greater control, use
+     * {@link #onMethodInvocation(String, String, String, OnBreakpoint)}
+     * <p>
+     * TODO: what should this return?  A future for the BreakpointRequest?
+     *
+     * @param className  A class name suitable for use by
+     *                   {@link ClassPrepareRequest#addClassFilter(String)}
+     * @param methodName A method name suitable for use by
+     *                   {@link ReferenceType#methodsByName(String)}.  Must be
+     *                   a method belonging to all classes matched by className.
+     * @param handler    The callback to execute when the method is invoked.
+     */
+    public void onMethodInvocation(final String className,
+                                   final String methodName,
+                                   final OnBreakpoint handler) {
+        onClassPrep(className, new OnClassPrepare() {
+                public void classPrepare(ClassPrepareEvent ev) {
+                    List<Method> methods
+                        = ev.referenceType().methodsByName(methodName);
+                    for(Method m: methods) {
+                        breakpointRequest(m.location(), handler)
                             .enable();
                     }
-                })
-            .enable();
+                }
+            });
+    }
+
+    /**
+     * Identical to {@link #onMethodInvocation(String, String, OnBreakpoint)},
+     * extending filtering to include a method signature.
+     * <p>
+     * TODO: what should this return?  A future for the BreakpointRequest?
+     *
+     * @param className  A class name suitable for use by
+     *                   {@link ClassPrepareRequest#addClassFilter(String)}
+     * @param methodName A method name suitable for use by
+     *                   {@link ReferenceType#methodsByName(String)}.  Must be
+     *                   a method belonging to all classes matched by className.
+     * @param methodSig  A method signature suitable for use by
+     *                   {@link ReferenceType#methodsByName(String, String)}.
+     *                   Must be a method belonging to all classes matched by
+     *                   className.
+     * @param handler    The callback to execute when the method is invoked.
+     */
+    public void onFieldModification(final String className,
+                                    final String methodName,
+                                    final String methodSig,
+                                    final OnBreakpoint handler) {
+        onClassPrep(className, new OnClassPrepare() {
+                public void classPrepare(ClassPrepareEvent ev) {
+                    List<Method> methods
+                        = ev.referenceType().methodsByName(methodName,
+                                                           methodSig);
+                    for(Method m: methods) {
+                        breakpointRequest(m.location(), handler)
+                            .enable();
+                    }
+                }
+            });
     }
 
 }
