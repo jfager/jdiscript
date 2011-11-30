@@ -95,7 +95,7 @@ public class DebugEventDispatcher {
     /**
      * Dispatch incoming events
      */
-    public void dispatch(VirtualMachine vm, Event event, int suspendPolicy) {
+    public void dispatch(final Event event) {
         final EventRequest request = event.request();
         if (request == null) {
             for(DebugEventHandler handler: handlers) {
@@ -132,7 +132,7 @@ public class DebugEventDispatcher {
     }
 
     // Dispatching for the full set of possible events.
-    private void doFullDispatch(Event event, DebugEventHandler handler) {
+    public static void doFullDispatch(Event event, DebugEventHandler handler) {
         if(event instanceof BreakpointEvent &&
            handler instanceof OnBreakpoint) {
             ((OnBreakpoint)handler).breakpoint((BreakpointEvent)event);

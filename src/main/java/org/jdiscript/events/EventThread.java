@@ -73,14 +73,14 @@ public class EventThread extends Thread {
         while (true) {
             try {
                 EventSet eventSet = queue.remove();
-                int suspendPolicy = eventSet.suspendPolicy();
                 EventIterator it = eventSet.eventIterator();
                 while (it.hasNext()) {
-                    dispatcher.dispatch(vm, it.nextEvent(), suspendPolicy);
+                    dispatcher.dispatch(it.nextEvent());
                 }
                 eventSet.resume();
             } catch (InterruptedException exc) {
-                // Ignore
+                vm.dispose();
+                break;
             } catch (VMDisconnectedException discExc) {
                 handleDisconnectedException();
                 break;
@@ -103,15 +103,16 @@ public class EventThread extends Thread {
                 while (iter.hasNext()) {
                     Event event = iter.nextEvent();
                     if (event instanceof VMDeathEvent) {
-                        dispatcher.dispatch(vm, event, eventSet.suspendPolicy());
+                        dispatcher.dispatch(event);
                     } else if (event instanceof VMDisconnectEvent) {
-                        dispatcher.dispatch(vm, event, eventSet.suspendPolicy());
+                        dispatcher.dispatch(event);
                         connected = false;
                     }
                 }
                 eventSet.resume(); // Resume the VM
             } catch (InterruptedException e) {
-                // ignore
+                vm.dispose();
+                break;
             } catch (VMDisconnectedException e) {
                 break;
             }
