@@ -2,9 +2,7 @@ package org.jdiscript.example;
 
 import org.jdiscript.JDIScript;
 import org.jdiscript.handlers.OnAccessWatchpoint;
-import org.jdiscript.handlers.OnClassPrepare;
 import org.jdiscript.handlers.OnStep;
-import org.jdiscript.handlers.OnVMStart;
 import org.jdiscript.util.VMLauncher;
 
 import com.sun.jdi.Field;
@@ -12,10 +10,7 @@ import com.sun.jdi.ObjectReference;
 import com.sun.jdi.StringReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.AccessWatchpointEvent;
-import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.StepEvent;
-import com.sun.jdi.event.VMStartEvent;
-import com.sun.jdi.request.StepRequest;
 
 public class HelloWorldExample {
     public static void main(final String[] args) {
@@ -30,40 +25,27 @@ public class HelloWorldExample {
         }
 
         final JDIScript j = new JDIScript(vm);
-        j.run(new OnVMStart() {
-            public void vmStart(VMStartEvent e) {
-                j.classPrepareRequest()
-                 .addClassFilter("org.jdiscript.example.HelloWorld")
-                 .addHandler(new OnClassPrepare() {
-                     public void classPrepare(ClassPrepareEvent e) {
-                         Field field = e.referenceType().fieldByName("helloTo");
-                         j.accessWatchpointRequest(field)
-                          .addHandler(new OnAccessWatchpoint() {
-                              public void accessWatchpoint(AccessWatchpointEvent e) {
-                                  j.stepRequest(e.thread(),
-                                                StepRequest.STEP_MIN,
-                                                StepRequest.STEP_OVER)
-                                   .putProperty("field", e.field())
-                                   .putProperty("object", e.object())
-                                   .addHandler(new OnStep() {
-                                       public void step(StepEvent se) {
-                                           StringReference alttobe = se.virtualMachine().mirrorOf("Groovy");
-                                           StepRequest req = (StepRequest)se.request();
-                                           req.disable();
-                                           try {
-                                               ((ObjectReference)req.getProperty("object")).setValue(
-                                                       (Field)req.getProperty("field"), alttobe);
-                                           } catch(Exception e) {
-                                               throw new RuntimeException(e);
-                                           }
-                                       }
-                                   }).enable();
-                              }
-                          }).enable();
-                     }
-                 }).enable();
-            }
-        });
+        
+        final StringReference alt = j.vm().mirrorOf("JDIScript!");
+        
+        j.onFieldAccess("org.jdiscript.example.HelloWorld", "helloTo",
+        	new OnAccessWatchpoint() {
+        		public void accessWatchpoint(AccessWatchpointEvent e) {
+        			final ObjectReference obj = e.object();
+        			final Field field = e.field();
+        			j.onStepInto(e.thread(), j.once(new OnStep() {
+        				public void step(StepEvent e) {
+        					try {
+        						obj.setValue(field, alt);
+        					} catch(Exception ex) {
+        						throw new RuntimeException(ex);
+        					}
+        				}
+        			}));
+        		}
+        	});
+
+        j.run();
     }
 
 }
