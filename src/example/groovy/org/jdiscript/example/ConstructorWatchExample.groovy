@@ -1,5 +1,6 @@
-package org.jdiscript
+package org.jdiscript.example
 
+import org.jdiscript.JDIScript
 import org.jdiscript.handlers.OnBreakpoint
 import org.jdiscript.handlers.OnClassPrepare
 import org.jdiscript.handlers.OnMethodExit

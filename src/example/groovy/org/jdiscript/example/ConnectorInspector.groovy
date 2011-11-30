@@ -1,5 +1,5 @@
 // Quick script to print out the Connector details for your JVM.
-package org.jdiscript
+package org.jdiscript.example
 
 import com.sun.jdi.Bootstrap
 import com.sun.jdi.VirtualMachineManager

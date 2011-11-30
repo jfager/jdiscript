@@ -1,7 +1,9 @@
-package org.jdiscript
+package org.jdiscript.example
 
+import org.jdiscript.JDIScript
 import org.jdiscript.handlers.*
 import org.jdiscript.util.VMSocketAttacher
+
 import com.sun.jdi.*
 
 VirtualMachine vm = new VMSocketAttacher(12345).attach()

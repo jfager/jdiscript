@@ -1,6 +1,7 @@
-package org.jdiscript
+package org.jdiscript.example
 
-import org.jdiscript.example.TraceExampleHandler
+import org.jdiscript.JDIScript
+
 import com.sun.jdi.VirtualMachine
 
 VirtualMachine vm = TomcatStarter.vm()
