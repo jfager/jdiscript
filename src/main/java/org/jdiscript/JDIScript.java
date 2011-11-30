@@ -338,7 +338,7 @@ public class JDIScript {
         return ((ChainingMonitorWaitRequest)EventRequestProxy.proxy(
                 erm.createMonitorWaitRequest(),
                 ChainingMonitorWaitRequest.class)).addHandler(handler);
-    }
+    }    
 
     /**
      * @see EventRequestManager#createStepRequest
@@ -346,7 +346,7 @@ public class JDIScript {
     public ChainingStepRequest stepRequest( ThreadReference thread,
                                             int size,
                                             int depth ) {
-        return stepRequest( thread, size, depth , null);
+        return stepRequest(thread, size, depth, null);
     }
 
     /**
@@ -699,4 +699,61 @@ public class JDIScript {
             });
     }
 
+    /**
+     * Create a stepRequest and enable it.
+     * 
+     * @param thread
+     * @param size
+     * @param depth
+     * @param handler
+     */
+    public void onStep(final ThreadReference thread,
+    		           final int size,
+    		           final int depth,
+    		           final OnStep handler) {
+    	stepRequest(thread, size, depth, handler).enable();
+    }
+
+    /**
+     * onStep with size=StepRequest.STEP_MIN, depth=StepRequest.STEP_INTO
+     * @param thread
+     * @param handler
+     */
+    public void onStepInto(final ThreadReference thread, 
+    		               final OnStep handler) {
+    	onStep(thread, StepRequest.STEP_MIN, StepRequest.STEP_INTO, handler);
+    }
+    
+    /**
+     * onStep with size=StepRequest.STEP_MIN, depth=StepRequest.STEP_OVER
+     * @param thread
+     * @param handler
+     */    
+    public void onStepOver(final ThreadReference thread,
+    					   final OnStep handler) {
+    	onStep(thread, StepRequest.STEP_MIN, StepRequest.STEP_OVER, handler);
+    }
+    
+    /**
+     * onStep with size=StepRequest.STEP_MIN, depth=StepRequest.STEP_OUT
+     * @param thread
+     * @param handler
+     */    
+    public void onStepOut(final ThreadReference thread,
+    					final OnStep handler) {
+        onStep(thread, StepRequest.STEP_MIN, StepRequest.STEP_OUT, handler); 
+    }    
+    
+    /**
+     * Create a handler that runs the given handler once and then disables
+     * the event request that caused the handler to be invoked.
+     * 
+     * @param <K> The type of the inner handler
+     * @param handler  The inner handler
+     * @return An instance of {@link Once} cast to the same type as the inner handler.
+     */
+    @SuppressWarnings("unchecked")
+    public <K extends DebugEventHandler> K once(K handler) {
+    	return (K)new Once(handler);
+    }
 }
