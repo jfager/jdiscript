@@ -2,9 +2,9 @@ package org.jdiscript.events;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 
 import org.jdiscript.handlers.DebugEventHandler;
 import org.jdiscript.handlers.OnAccessWatchpoint;
@@ -29,7 +29,6 @@ import org.jdiscript.handlers.OnVMDisconnect;
 import org.jdiscript.handlers.OnVMStart;
 import org.jdiscript.handlers.OnWatchpoint;
 
-import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.AccessWatchpointEvent;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
