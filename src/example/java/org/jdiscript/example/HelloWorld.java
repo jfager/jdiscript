@@ -5,11 +5,15 @@ public class HelloWorld {
     private String helloTo;
 
     public HelloWorld() {
-        this("World");
+    	this("World");
     }
 
     public HelloWorld(String helloTo) {
         this.helloTo = helloTo;
+    }
+    
+    public HelloWorld(String helloTo, String helloAnd) {
+    	this(helloTo + " and " + helloAnd);
     }
 
     public String sayHello() {
@@ -30,7 +34,7 @@ public class HelloWorld {
         System.out.println(hello.sayHello());
         System.out.println(hello.sayHello());
 
-        hello = new HelloWorld("Fred");
+        hello = new HelloWorld("Fred", "Wilma");
         System.out.println(hello.sayHello());
         System.out.println(hello.sayHello());
     }
