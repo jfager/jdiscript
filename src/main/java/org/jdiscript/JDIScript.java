@@ -6,13 +6,73 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.jdiscript.events.*;
-import org.jdiscript.handlers.*;
-import org.jdiscript.requests.*;
+import org.jdiscript.events.DebugEventDispatcher;
+import org.jdiscript.events.EventThread;
+import org.jdiscript.handlers.DebugEventHandler;
+import org.jdiscript.handlers.OnAccessWatchpoint;
+import org.jdiscript.handlers.OnBreakpoint;
+import org.jdiscript.handlers.OnClassPrepare;
+import org.jdiscript.handlers.OnClassUnload;
+import org.jdiscript.handlers.OnException;
+import org.jdiscript.handlers.OnMethodEntry;
+import org.jdiscript.handlers.OnMethodExit;
+import org.jdiscript.handlers.OnModificationWatchpoint;
+import org.jdiscript.handlers.OnMonitorContendedEnter;
+import org.jdiscript.handlers.OnMonitorContendedEntered;
+import org.jdiscript.handlers.OnMonitorWait;
+import org.jdiscript.handlers.OnMonitorWaited;
+import org.jdiscript.handlers.OnStep;
+import org.jdiscript.handlers.OnThreadDeath;
+import org.jdiscript.handlers.OnThreadStart;
+import org.jdiscript.handlers.OnVMDeath;
+import org.jdiscript.handlers.Once;
+import org.jdiscript.requests.ChainingAccessWatchpointRequest;
+import org.jdiscript.requests.ChainingBreakpointRequest;
+import org.jdiscript.requests.ChainingClassPrepareRequest;
+import org.jdiscript.requests.ChainingClassUnloadRequest;
+import org.jdiscript.requests.ChainingExceptionRequest;
+import org.jdiscript.requests.ChainingMethodEntryRequest;
+import org.jdiscript.requests.ChainingMethodExitRequest;
+import org.jdiscript.requests.ChainingModificationWatchpointRequest;
+import org.jdiscript.requests.ChainingMonitorContendedEnterRequest;
+import org.jdiscript.requests.ChainingMonitorContendedEnteredRequest;
+import org.jdiscript.requests.ChainingMonitorWaitRequest;
+import org.jdiscript.requests.ChainingMonitorWaitedRequest;
+import org.jdiscript.requests.ChainingStepRequest;
+import org.jdiscript.requests.ChainingThreadDeathRequest;
+import org.jdiscript.requests.ChainingThreadStartRequest;
+import org.jdiscript.requests.ChainingVMDeathRequest;
+import org.jdiscript.requests.EventRequestProxy;
+import org.jdiscript.util.Utils;
 
-import com.sun.jdi.*;
-import com.sun.jdi.event.*;
-import com.sun.jdi.request.*;
+import com.sun.jdi.Field;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.Location;
+import com.sun.jdi.Method;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.StackFrame;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.ClassPrepareEvent;
+import com.sun.jdi.event.LocatableEvent;
+import com.sun.jdi.request.AccessWatchpointRequest;
+import com.sun.jdi.request.BreakpointRequest;
+import com.sun.jdi.request.ClassPrepareRequest;
+import com.sun.jdi.request.ClassUnloadRequest;
+import com.sun.jdi.request.EventRequest;
+import com.sun.jdi.request.EventRequestManager;
+import com.sun.jdi.request.ExceptionRequest;
+import com.sun.jdi.request.MethodEntryRequest;
+import com.sun.jdi.request.MethodExitRequest;
+import com.sun.jdi.request.ModificationWatchpointRequest;
+import com.sun.jdi.request.MonitorContendedEnterRequest;
+import com.sun.jdi.request.MonitorContendedEnteredRequest;
+import com.sun.jdi.request.MonitorWaitRequest;
+import com.sun.jdi.request.MonitorWaitedRequest;
+import com.sun.jdi.request.StepRequest;
+import com.sun.jdi.request.ThreadDeathRequest;
+import com.sun.jdi.request.ThreadStartRequest;
+import com.sun.jdi.request.VMDeathRequest;
 
 /**
  * Top-level class encapsulating common operations for working with
@@ -755,5 +815,12 @@ public class JDIScript {
     @SuppressWarnings("unchecked")
     public <K extends DebugEventHandler> K once(K handler) {
     	return (K)new Once(handler);
+    }
+    
+    public String fullName(Method method) {
+    	final String refType = method.declaringType().name();
+    	final String methName = method.name();
+    	final String methSig = Utils.join(method.argumentTypeNames(), ", ");
+    	return refType + "." + methName + "(" + methSig + ")";
     }
 }
