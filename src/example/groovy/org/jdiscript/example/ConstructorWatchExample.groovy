@@ -45,11 +45,22 @@ breakpoint = {
     println prefix + 'new ' + refType.name()
 
     stack.push it.location().method()
+	currthread = it.thread()
 
-    jdi.breakpointRequests(breakpoint).each { it.enable() }
+	//We've set breakpoints on every constructor.  Now that we're inside
+	//a method we care about, turn them all on for the current thread
+	//so that they get tripped when called.
+    jdi.breakpointRequests(breakpoint).each {
+		if(!it.enabled) {
+			it.addThreadFilter(currthread)
+			it.enable()
+		}
+	}
 
+	//Make sure that when we leave the current method call, we turn
+	//all of the constructor breakpoints back off.
     jdi.methodExitRequest(methodExit)
-       .addInstanceFilter( it.thread().frame(0).thisObject() )
+       .addInstanceFilter( currthread.frame(0).thisObject() )
        .enable()
 } as OnBreakpoint
 
