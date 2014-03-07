@@ -50,7 +50,7 @@ public class VMLauncher {
         this.err = err;
     }
 
-    public VirtualMachine start()
+    public VirtualMachine safeStart()
         throws IOException,
                IllegalConnectorArgumentsException,
                VMStartException
@@ -79,6 +79,17 @@ public class VMLauncher {
         }
 
         return vm;
+    }
+    
+    /**
+     * safeStart wrapped to throw RuntimeException.
+     */
+    public VirtualMachine start() {
+        try {
+            return safeStart();
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Thread redirect(String name, InputStream in, OutputStream out) {

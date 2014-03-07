@@ -34,7 +34,7 @@ public class VMSocketAttacher {
         this.timeout = timeout;
     }
 
-    public VirtualMachine attach()
+    public VirtualMachine safeAttach()
         throws IOException, IllegalConnectorArgumentsException
     {
         VirtualMachineManager vmm = Bootstrap.virtualMachineManager();
@@ -53,5 +53,18 @@ public class VMSocketAttacher {
         }
         final VirtualMachine vm = connector.attach(cArgs);
         return vm;
+    }
+    
+    /**
+     * Like safeAttach but wraps any checked exceptions in a RuntimeException.
+     * 
+     * @return
+     */
+    public VirtualMachine attach() {
+        try {
+            return safeAttach();
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

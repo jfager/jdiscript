@@ -3,8 +3,10 @@ package org.jdiscript.requests;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.jdiscript.handlers.DebugEventHandler;
 import org.jdiscript.events.DebugEventDispatcher;
@@ -31,21 +33,45 @@ public class EventRequestProxy implements InvocationHandler {
      * @return A dynamic proxy instance implementing the given interface
      *         using an EventRequestProxy.
      */
-    public static Object proxy(EventRequest origRequest, Class<?> iface) {
-        return Proxy.newProxyInstance(iface.getClassLoader(),
-                                      new Class<?>[]{ iface },
-                                      new EventRequestProxy(origRequest));
+    @SuppressWarnings("unchecked")
+    public static <T> T proxy(EventRequest origRequest, Class<T> iface) {
+        return (T)Proxy.newProxyInstance(iface.getClassLoader(),
+                                         new Class<?>[]{ iface },
+                                         new EventRequestProxy(origRequest));
     }
 
     private final EventRequest proxiedRequest;
-    private final Map<String, Method> methodCache
-        = new HashMap<String, Method>();
+    private final Map<MethodKey, Method> methodCache = new HashMap<>();
 
+    private static class MethodKey {
+        public static MethodKey from(Method m) {
+            return new MethodKey(m.getName(), Arrays.toString(m.getParameters()));
+        }
+        
+        final String name;
+        final String args;
+        public MethodKey(String name, String args) {
+            this.name = name;
+            this.args = args;
+        }
+        @Override
+        public boolean equals(Object that) {
+            return that instanceof MethodKey
+                && Objects.equals(this.name, ((MethodKey)that).name) 
+                && Objects.equals(this.args, ((MethodKey)that).args);
+        }
+        public int hashCode() {
+            return Objects.hash(name, args);
+        }
+        public String toString() {
+            return name + args;
+        }
+    }
     private EventRequestProxy(EventRequest request) {
         this.proxiedRequest = request;
         for(Method m: request.getClass().getMethods()) {
             m.setAccessible(true);
-            methodCache.put(m.getName(), m);
+            methodCache.put(MethodKey.from(m), m);
         }
     }
 
@@ -64,8 +90,8 @@ public class EventRequestProxy implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable
     {
-        String name = method.getName();
-        Method m = methodCache.get(name);
+        MethodKey key = MethodKey.from(method);
+        Method m = methodCache.get(key);
         if(m != null) {
             Object out = m.invoke(proxiedRequest, args);
             if(out == null) {
@@ -73,7 +99,7 @@ public class EventRequestProxy implements InvocationHandler {
             } else {
                 return out;
             }
-        } else if (name.equals("addHandler")) {
+        } else if (method.getName().equals("addHandler")) {
             Object handlerObj = args[0];
             if(handlerObj == null) {
                 return proxy;
