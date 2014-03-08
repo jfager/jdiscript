@@ -4,10 +4,8 @@ import static org.jdiscript.util.Utils.println;
 import static org.jdiscript.util.Utils.unsafe;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
 import org.jdiscript.JDIScript;
 import org.jdiscript.handlers.OnMonitorContendedEnter;
@@ -19,51 +17,45 @@ import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
 
 class ContentionReporter {
-    
+
     public static void main(String[] args) {
         VirtualMachine vm = new VMSocketAttacher(12345).attach();
         JDIScript j = new JDIScript(vm);
+        BiFunction<Integer, Integer, Integer> add = (v1,v2) -> v1+v2;
 
         class ContentionTracker {
             int counter = 0;
-            Set<Location> locations = new HashSet<>();
-            Set<String> sourceNames = new HashSet<>();
-            Map<String, AtomicInteger> threads = new HashMap<>();
+            Map<Long, Integer> monitorIds = new HashMap<>();
+            Map<String, Integer> callers = new HashMap<>();
+            Map<String, Integer> threads = new HashMap<>();
         }
 
-        Map<Long, ContentionTracker> contended = new HashMap<>();
+        Map<String, ContentionTracker> contended = new HashMap<>();
 
         OnMonitorContendedEnter monitorContendedEnter = e -> {
             ThreadReference tref = e.thread();
             ObjectReference mref = e.monitor();
 
-            ContentionTracker t = contended.computeIfAbsent(mref.uniqueID(),
+            ContentionTracker t = contended.computeIfAbsent(e.location().toString(),
                                                             k -> new ContentionTracker());
 
             unsafe(() -> {
                 t.counter += 1;
-                t.locations.add(e.location());
-                t.sourceNames.addAll(mref.referenceType().sourcePaths(null));
+                t.monitorIds.merge(mref.uniqueID(), 1, add);
+                t.callers.merge(tref.frame(1).location().toString(), 1, add);
+                t.threads.merge(tref.name() + tref.uniqueID(), 1, add);
             });
-
-            String threadKey = tref.name() + tref.uniqueID();
-            AtomicInteger threadCount = t.threads.computeIfAbsent(threadKey, 
-                                                                  k -> new AtomicInteger(0));
-            threadCount.addAndGet(1);
         };
 
         j.monitorContendedEnterRequest().addHandler(monitorContendedEnter).enable();
-        j.run(10 * 1000);
-
-        println("Shutting down");
-        vm.process().destroy();
+        j.run();
 
         println("Contention info:");
         contended.forEach((k,v) -> {
-            println("MonitorID: "+k+", Hits: "+v.counter);
-            println("\tLocations: "+v.locations);
-            println("\tMonitor source: "+v.sourceNames);
+            println("Location: "+k+", Hits: "+v.counter);
+            println("\tCallers: "+v.callers);
             println("\tThreads: "+v.threads);
+            println("\tMonitorIds: "+v.monitorIds);
         });
     }
 }
