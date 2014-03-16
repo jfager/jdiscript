@@ -1,10 +1,11 @@
 package org.jdiscript;
 
+import static org.jdiscript.requests.EventRequestProxy.proxy;
+
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jdiscript.events.DebugEventDispatcher;
 import org.jdiscript.events.EventThread;
@@ -42,9 +43,8 @@ import org.jdiscript.requests.ChainingStepRequest;
 import org.jdiscript.requests.ChainingThreadDeathRequest;
 import org.jdiscript.requests.ChainingThreadStartRequest;
 import org.jdiscript.requests.ChainingVMDeathRequest;
-import org.jdiscript.requests.EventRequestProxy;
-import org.jdiscript.util.Utils;
 
+import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.Location;
@@ -53,7 +53,6 @@ import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.LocatableEvent;
 import com.sun.jdi.request.AccessWatchpointRequest;
 import com.sun.jdi.request.BreakpointRequest;
@@ -212,9 +211,8 @@ public class JDIScript {
      * @see EventRequestManager#createAccessWatchpointRequest
      */
     public ChainingAccessWatchpointRequest accessWatchpointRequest(Field field, OnAccessWatchpoint handler) {
-        return ((ChainingAccessWatchpointRequest)EventRequestProxy.proxy(
-                erm.createAccessWatchpointRequest(field),
-                ChainingAccessWatchpointRequest.class)).addHandler(handler);
+        return proxy(erm.createAccessWatchpointRequest(field),
+                     ChainingAccessWatchpointRequest.class).addHandler(handler);
     }
 
     /**
@@ -228,9 +226,8 @@ public class JDIScript {
      * @see EventRequestManager#createBreakpointRequest
      */
     public ChainingBreakpointRequest breakpointRequest(Location location, OnBreakpoint handler) {
-        return ((ChainingBreakpointRequest)EventRequestProxy.proxy(
-                erm.createBreakpointRequest(location),
-                ChainingBreakpointRequest.class)).addHandler(handler);
+        return proxy(erm.createBreakpointRequest(location),
+                     ChainingBreakpointRequest.class).addHandler(handler);
     }
 
     /**
@@ -244,9 +241,8 @@ public class JDIScript {
      * @see EventRequestManager#createClassPrepareRequest
      */
     public ChainingClassPrepareRequest classPrepareRequest(OnClassPrepare handler) {
-        return ((ChainingClassPrepareRequest)EventRequestProxy.proxy(
-                erm.createClassPrepareRequest(),
-                ChainingClassPrepareRequest.class)).addHandler(handler);
+        return proxy(erm.createClassPrepareRequest(),
+                     ChainingClassPrepareRequest.class).addHandler(handler);
     }
 
     /**
@@ -260,9 +256,8 @@ public class JDIScript {
      * @see EventRequestManager#createClassUnloadRequest
      */
     public ChainingClassUnloadRequest classUnloadRequest(OnClassUnload handler) {
-        return ((ChainingClassUnloadRequest)EventRequestProxy.proxy(
-                erm.createClassUnloadRequest(),
-                ChainingClassUnloadRequest.class)).addHandler(handler);
+        return proxy(erm.createClassUnloadRequest(),
+                     ChainingClassUnloadRequest.class).addHandler(handler);
     }
 
     /**
@@ -281,11 +276,8 @@ public class JDIScript {
                                              boolean notifyCaught,
                                              boolean notifyUncaught,
                                              OnException handler) {
-        return ((ChainingExceptionRequest)EventRequestProxy.proxy(
-                erm.createExceptionRequest(refType,
-                                           notifyCaught,
-                                           notifyUncaught),
-                ChainingExceptionRequest.class)).addHandler(handler);
+        return proxy(erm.createExceptionRequest(refType, notifyCaught, notifyUncaught),
+                     ChainingExceptionRequest.class).addHandler(handler);
     }
 
     /**
@@ -299,9 +291,8 @@ public class JDIScript {
      * @see EventRequestManager#createMethodEntryRequest
      */
     public ChainingMethodEntryRequest methodEntryRequest(OnMethodEntry handler) {
-        return ((ChainingMethodEntryRequest)EventRequestProxy.proxy(
-                erm.createMethodEntryRequest(),
-                ChainingMethodEntryRequest.class)).addHandler(handler);
+        return proxy(erm.createMethodEntryRequest(),
+                     ChainingMethodEntryRequest.class).addHandler(handler);
     }
 
     /**
@@ -315,9 +306,8 @@ public class JDIScript {
      * @see EventRequestManager#createMethodExitRequest
      */
     public ChainingMethodExitRequest methodExitRequest(OnMethodExit handler) {
-        return ((ChainingMethodExitRequest)EventRequestProxy.proxy(
-                erm.createMethodExitRequest(),
-                ChainingMethodExitRequest.class)).addHandler(handler);
+        return proxy(erm.createMethodExitRequest(),
+                     ChainingMethodExitRequest.class).addHandler(handler);
     }
 
     /**
@@ -331,9 +321,8 @@ public class JDIScript {
      * @see EventRequestManager#createModificationWatchpointRequest
      */
     public ChainingModificationWatchpointRequest modificationWatchpointRequest(Field field, OnModificationWatchpoint handler) {
-        return ((ChainingModificationWatchpointRequest)EventRequestProxy.proxy(
-                erm.createModificationWatchpointRequest(field),
-                ChainingModificationWatchpointRequest.class)).addHandler(handler);
+        return proxy(erm.createModificationWatchpointRequest(field),
+                     ChainingModificationWatchpointRequest.class).addHandler(handler);
     }
 
     /**
@@ -347,9 +336,8 @@ public class JDIScript {
      * @see EventRequestManager#createMonitorContendedEnteredRequest
      */
     public ChainingMonitorContendedEnteredRequest monitorContendedEnteredRequest(OnMonitorContendedEntered handler) {
-        return ((ChainingMonitorContendedEnteredRequest)EventRequestProxy.proxy(
-                erm.createMonitorContendedEnteredRequest(),
-                ChainingMonitorContendedEnteredRequest.class)).addHandler(handler);
+        return proxy(erm.createMonitorContendedEnteredRequest(),
+                     ChainingMonitorContendedEnteredRequest.class).addHandler(handler);
     }
 
     /**
@@ -363,9 +351,8 @@ public class JDIScript {
      * @see EventRequestManager#createMonitorContendedEnterRequest
      */
     public ChainingMonitorContendedEnterRequest monitorContendedEnterRequest(OnMonitorContendedEnter handler) {
-        return ((ChainingMonitorContendedEnterRequest)EventRequestProxy.proxy(
-                erm.createMonitorContendedEnterRequest(),
-                ChainingMonitorContendedEnterRequest.class)).addHandler(handler);
+        return proxy(erm.createMonitorContendedEnterRequest(),
+                     ChainingMonitorContendedEnterRequest.class).addHandler(handler);
     }
 
     /**
@@ -379,11 +366,10 @@ public class JDIScript {
      * @see EventRequestManager#createMonitorWaitedRequest
      */
     public ChainingMonitorWaitedRequest monitorWaitedRequest(OnMonitorWaited handler) {
-        return ((ChainingMonitorWaitedRequest)EventRequestProxy.proxy(
-                erm.createMonitorWaitedRequest(),
-                ChainingMonitorWaitedRequest.class)).addHandler(handler);
+        return proxy(erm.createMonitorWaitedRequest(),
+                     ChainingMonitorWaitedRequest.class).addHandler(handler);
     }
-
+    
     /**
      * @see EventRequestManager#createMonitorWaitRequest
      */
@@ -395,9 +381,8 @@ public class JDIScript {
      * @see EventRequestManager#createMonitorWaitRequest
      */
     public ChainingMonitorWaitRequest monitorWaitRequest(OnMonitorWait handler) {
-        return ((ChainingMonitorWaitRequest)EventRequestProxy.proxy(
-                erm.createMonitorWaitRequest(),
-                ChainingMonitorWaitRequest.class)).addHandler(handler);
+        return proxy(erm.createMonitorWaitRequest(),
+                     ChainingMonitorWaitRequest.class).addHandler(handler);
     }    
 
     /**
@@ -416,9 +401,8 @@ public class JDIScript {
                                             int size,
                                             int depth,
                                             OnStep handler) {
-        return ((ChainingStepRequest)EventRequestProxy.proxy(
-                erm.createStepRequest(thread, size, depth),
-                ChainingStepRequest.class)).addHandler(handler);
+        return proxy(erm.createStepRequest(thread, size, depth),
+                     ChainingStepRequest.class).addHandler(handler);
     }
 
     /**
@@ -432,9 +416,8 @@ public class JDIScript {
      * @see EventRequestManager#createThreadDeathRequest
      */
     public ChainingThreadDeathRequest threadDeathRequest(OnThreadDeath handler) {
-        return ((ChainingThreadDeathRequest)EventRequestProxy.proxy(
-                erm.createThreadDeathRequest(),
-                ChainingThreadDeathRequest.class)).addHandler(handler);
+        return proxy(erm.createThreadDeathRequest(),
+                     ChainingThreadDeathRequest.class).addHandler(handler);
     }
 
     /**
@@ -448,9 +431,8 @@ public class JDIScript {
      * @see EventRequestManager#createThreadStartRequest
      */
     public ChainingThreadStartRequest threadStartRequest(OnThreadStart handler) {
-        return ((ChainingThreadStartRequest)EventRequestProxy.proxy(
-                erm.createThreadStartRequest(),
-                ChainingThreadStartRequest.class)).addHandler(handler);
+        return proxy(erm.createThreadStartRequest(),
+                     ChainingThreadStartRequest.class).addHandler(handler);
     }
 
     /**
@@ -464,9 +446,8 @@ public class JDIScript {
      * @see EventRequestManager#createVMDeathRequest
      */
     public ChainingVMDeathRequest vmDeathRequest(OnVMDeath handler) {
-        return ((ChainingVMDeathRequest)EventRequestProxy.proxy(
-                erm.createVMDeathRequest(),
-                ChainingVMDeathRequest.class)).addHandler(handler);
+        return proxy(erm.createVMDeathRequest(),
+                     ChainingVMDeathRequest.class).addHandler(handler);
     }
 
     // Convenience method for accessing only those EventRequests that are
@@ -537,14 +518,9 @@ public class JDIScript {
     }
 
     public <T extends EventRequest> List<T> filter(List<T> ers, DebugEventHandler handler) {
-        List<T> out = new ArrayList<T>();
-        for(T er: ers) {
-            Set<DebugEventHandler> handlers = DebugEventDispatcher.getHandlers(er);
-            if(handlers.contains(handler)) {
-                out.add(er);
-            }
-        }
-        return out;
+        return ers.stream()
+            .filter(er -> DebugEventDispatcher.getHandlers(er).contains(handler))
+            .collect(Collectors.toList());
     }
 
     public void deleteEventRequest(EventRequest eventRequest) {
@@ -603,6 +579,25 @@ public class JDIScript {
                        "could not retrieve frames **");
         }
     }
+    
+    /**
+     * Shortcut for the common pattern of decorating any class
+     * on preparation.
+     * <p>
+     * Builds a {@link ClassPrepareRequest}, and adds the given 
+     * {@link OnClassPrepare} handler.
+     * <p>
+     * TODO: what should this return?
+     *
+     * @param className  A class name suitable for use by
+     *                   {@link ClassPrepareRequest#addClassFilter(String)}
+     * @param handler    The callback to execute when the class is prepped.
+     */
+    public void onClassPrep(final OnClassPrepare handler) {
+        classPrepareRequest()
+            .addHandler(handler)
+            .enable();
+    }
 
     /**
      * Shortcut for the common pattern of decorating a particular class
@@ -645,13 +640,10 @@ public class JDIScript {
     public void onFieldAccess(final String className,
                               final String fieldName,
                               final OnAccessWatchpoint handler) {
-        onClassPrep(className, new OnClassPrepare() {
-                public void classPrepare(ClassPrepareEvent ev) {
-                    Field field = ev.referenceType().fieldByName(fieldName);
-                    accessWatchpointRequest(field, handler)
-                        .enable();
-                }
-            });
+        onClassPrep(className, ev -> { 
+            Field field = ev.referenceType().fieldByName(fieldName);
+            accessWatchpointRequest(field, handler).enable();
+        });
     }
 
     /**
@@ -674,13 +666,10 @@ public class JDIScript {
     public void onFieldModification(final String className,
                                     final String fieldName,
                                     final OnModificationWatchpoint handler) {
-        onClassPrep(className, new OnClassPrepare() {
-                public void classPrepare(ClassPrepareEvent ev) {
-                    Field field = ev.referenceType().fieldByName(fieldName);
-                    modificationWatchpointRequest(field, handler)
-                        .enable();
-                }
-            });
+        onClassPrep(className, ev -> { 
+            Field field = ev.referenceType().fieldByName(fieldName);
+            modificationWatchpointRequest(field, handler).enable();
+        });
     }
 
     /**
@@ -713,16 +702,11 @@ public class JDIScript {
     public void onMethodInvocation(final String className,
                                    final String methodName,
                                    final OnBreakpoint handler) {
-        onClassPrep(className, new OnClassPrepare() {
-                public void classPrepare(ClassPrepareEvent ev) {
-                    List<Method> methods
-                        = ev.referenceType().methodsByName(methodName);
-                    for(Method m: methods) {
-                        breakpointRequest(m.location(), handler)
-                            .enable();
-                    }
-                }
-            });
+        onClassPrep(className, ev -> {
+            ev.referenceType().methodsByName(methodName).forEach(m -> 
+                breakpointRequest(m.location(), handler).enable()
+            );
+        });
     }
 
     /**
@@ -746,17 +730,32 @@ public class JDIScript {
                                    final String methodName,
                                    final String methodSig,
                                    final OnBreakpoint handler) {
-        onClassPrep(className, new OnClassPrepare() {
-                public void classPrepare(ClassPrepareEvent ev) {
-                    List<Method> methods
-                        = ev.referenceType().methodsByName(methodName,
-                                                           methodSig);
-                    for(Method m: methods) {
-                        breakpointRequest(m.location(), handler)
-                            .enable();
-                    }
-                }
-            });
+        onClassPrep(className, ev -> { 
+            ev.referenceType().methodsByName(methodName, methodSig).forEach(m ->
+                breakpointRequest(m.location(), handler).enable()
+            );
+        });
+    }
+    
+    /**
+     * Creates a breakpointRequest for the exit from the currently executing method 
+     * on the given thread.
+     * 
+     * @param thread
+     * @param handler
+     * @throws IncompatibleThreadStateException 
+     * @throws AbsentInformationException 
+     */
+    public void onCurrentMethodExit(final ThreadReference thread,
+                                    //final OnMethodExit handler) 
+                                    final OnBreakpoint handler) 
+        throws IncompatibleThreadStateException, AbsentInformationException 
+    {
+        List<Location> locs = thread.frame(0).location().method().allLineLocations();
+        Location last = locs.get(locs.size()-1);
+        breakpointRequest(last, handler)
+            .addInstanceFilter(thread.frame(0).thisObject())
+            .enable();
     }
 
     /**
@@ -800,7 +799,7 @@ public class JDIScript {
      * @param handler
      */    
     public void onStepOut(final ThreadReference thread,
-    					final OnStep handler) {
+    					  final OnStep handler) {
         onStep(thread, StepRequest.STEP_MIN, StepRequest.STEP_OUT, handler); 
     }    
     
@@ -820,7 +819,8 @@ public class JDIScript {
     public String fullName(Method method) {
     	final String refType = method.declaringType().name();
     	final String methName = method.name();
-    	final String methSig = Utils.join(method.argumentTypeNames(), ", ");
+    	final String methSig = String.join(", ", method.argumentTypeNames());
     	return refType + "." + methName + "(" + methSig + ")";
     }
+
 }

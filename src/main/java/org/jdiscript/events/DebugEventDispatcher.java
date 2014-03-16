@@ -2,6 +2,7 @@ package org.jdiscript.events;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -62,7 +63,8 @@ public class DebugEventDispatcher {
      */
     @SuppressWarnings("unchecked")
     public static Set<DebugEventHandler> getHandlers(EventRequest er) {
-        return (Set<DebugEventHandler>)(er.getProperty(PROP_KEY));
+        Set<DebugEventHandler> out = (Set<DebugEventHandler>)(er.getProperty(PROP_KEY));
+        return (out == null) ? Collections.emptySet() : out;  
     }
 
     /**
@@ -73,15 +75,14 @@ public class DebugEventDispatcher {
      */
     public static boolean addHandler(EventRequest er, DebugEventHandler handler) {
         Set<DebugEventHandler> handlers = getHandlers(er);
-        if(handlers == null) {
-            handlers = new HashSet<DebugEventHandler>();
+        if(handlers.isEmpty()) {
+            handlers = new HashSet<>();
             er.putProperty(PROP_KEY, handlers);
         }
         return handlers.add(handler);
     }
 
-    private List<DebugEventHandler> handlers
-        = new ArrayList<DebugEventHandler>();
+    private List<DebugEventHandler> handlers = new ArrayList<>();
 
     public void addHandler(DebugEventHandler handler) {
         handlers.add(handler);
@@ -97,9 +98,7 @@ public class DebugEventDispatcher {
     public void dispatch(final Event event) {
         final EventRequest request = event.request();
         if (request == null) {
-            for(DebugEventHandler handler: handlers) {
-                doVMEventDispatch(event, handler);
-            }
+            handlers.forEach(handler -> doVMEventDispatch(event, handler));
             return;
         }
 
@@ -110,9 +109,7 @@ public class DebugEventDispatcher {
                                        + event);
         }
 
-        for(DebugEventHandler handler: requestHandlers) {
-            doFullDispatch(event, handler);
-        }
+        requestHandlers.forEach(handler -> doFullDispatch(event, handler));
     }
 
     // Events that have no corresponding request must be one of a smaller set
