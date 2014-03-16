@@ -3,7 +3,7 @@ to write scripts that use the JDI to control and inspect almost anything happeni
 running JVM.  Think of it as similar to [DTrace](http://dtrace.org/blogs/about/), but with 
 more Java-specific flexibility and the ability to use a JVM language for scripting. 
 
-For example, here's how you'd print out a stack trace any time a thread tried to enter a
+Here's how you'd print out a stack trace any time a thread tried to enter a
 monitor already owned by another thread:
 
 ```java
@@ -17,20 +17,21 @@ j.monitorContendedEnterRequest(e -> {
 j.run();
 ```
 
-For more use cases, see the included [examples](src/example/java/org/jdiscript/example).
+For more, see the included [examples](src/example/java/org/jdiscript/example).
 
 jdiscript provides
 
-- An event loop that frees you from the details of managing (EventSets)[http://download.java.net/jdk8/docs/jdk/api/jpda/jdi/index.html?com/sun/jdi/event/EventSet.html].
+- An event loop that frees you from the details of managing [EventSets](http://download.java.net/jdk8/docs/jdk/api/jpda/jdi/index.html?com/sun/jdi/event/EventSet.html).
 
 - A set of [FunctionalInterfaces](http://download.java.net/jdk8/docs/api/java/lang/FunctionalInterface.html) 
   so you can use lambdas.
 
-- Utility classes for launching a new VM and handling its process input and
-  output, or attaching to an existing VM.
+- Classes that handle the boilerplate of [launching](src/main/java/org/jdiscript/util/VMLauncher.java)  
+  or [attaching to](src/main/java/org/jdiscript/util/VMSocketAttacher.java) 
+  a [VirtualMachine](http://download.java.net/jdk8/docs/jdk/api/jpda/jdi/index.html?com/sun/jdi/VirtualMachine.html).
 
-- A [JDIScript class](src/main/java/org/jdiscript/JDIScript.java) that provides 
-  convenience methods for common script patterns.
+- A [JDIScript class](src/main/java/org/jdiscript/JDIScript.java) that ties it all together and
+  provides convenience methods for common script patterns.
 
 jdiscript was originally focused on providing an API that you would use from languages like 
 Groovy, JRuby, and Clojure, under the belief that Java itself was too verbose for a nice 
