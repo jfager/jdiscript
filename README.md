@@ -1,32 +1,40 @@
-A scripting frontend for the Java Debugger Interface (JDI).
+jdiscript is an elegant wrapper for a more civilized Java Debugger Interface.  It allows you 
+to write scripts that use the JDI to control and inspect almost anything happening inside a 
+running JVM.  Think of it as similar to [DTrace](http://dtrace.org/blogs/about/), but with 
+more Java-specific flexibility and the ability to use a JVM language for scripting. 
 
-An example of a real-world use case is available in a post
-[introducing jdiscript](http://jasonfager.com/888-introducing-jdiscript/), which finds thread
-contention in the [Cassandra](http://cassandra.apache.org/) write path.  At this point Cassandra
-itself has moved on, but the jdiscript stuff is still correct.
+For example, here's how you'd print out a stack trace any time a thread tried to enter a
+monitor already owned by another thread:
 
-Right now, jdiscript provides:
+```java
+VirtualMachine vm = new VMSocketAttacher(12345).attach();
+JDIScript j = new JDIScript(vm);
 
-- An event-loop/dispatcher that allows you to specify handlers to respond to
-  events from particular EventRequests.
+j.monitorContendedEnterRequest(e -> {
+    j.printTrace(e, "ContendedEnter for "+e.monitor());
+}).enable();
 
-- A set of single-method handler interfaces that are easy to implement as
-  closures in other languages available on the jvm.
+j.run();
+```
+
+For more use cases, see the included [examples](src/example/java/org/jdiscript/example).
+
+jdiscript provides
+
+- An event loop that frees you from the details of managing (EventSets)[http://download.java.net/jdk8/docs/jdk/api/jpda/jdi/index.html?com/sun/jdi/event/EventSet.html].
+
+- A set of [FunctionalInterfaces](http://download.java.net/jdk8/docs/api/java/lang/FunctionalInterface.html) 
+  so you can use lambdas.
 
 - Utility classes for launching a new VM and handling its process input and
   output, or attaching to an existing VM.
 
-- A top-level script object that allows easy access to frequently used operations.
+- A [JDIScript class](src/main/java/org/jdiscript/JDIScript.java) that provides 
+  convenience methods for common script patterns.
 
-jdiscript is pure Java, with no dependencies outside of jdk6/7.  Some
-sample scripts in other languages are provided to get you started, including
-Groovy, JRuby, Clojure, and Scala.  If you run into problems with
-your language of choice, or you have ideas for how a common idiom in your
-language could be better supported by the underlying Java implementation,
-please let me know.
+jdiscript was originally focused on providing an API that you would use from languages like 
+Groovy, JRuby, and Clojure, under the belief that Java itself was too verbose for a nice 
+scripting experience.  With Java 8, this has changed, and straight Java is now compact enough 
+that it might not be worth the overhead of switching to another language.  All examples that
+ship with jdiscript have been converted to Java 8.   
 
-I'd also like to start collecting generally useful scripts into one place, and
-creating a comprehensive debugging catalogue that anyone can dip into to help
-troubleshoot their code more efficiently.  If you have one you'd like to share,
-drop it into a gist and I will link to it from the
-[wiki page](http://wiki.github.com/jfager/jdiscript/useful-jdiscripts).
