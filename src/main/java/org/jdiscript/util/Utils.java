@@ -1,5 +1,6 @@
 package org.jdiscript.util;
 
+
 public class Utils {
 	
     public static String repeat(String s, int times) {
@@ -13,7 +14,7 @@ public class Utils {
     public static void println(String s) {
         System.out.println(s);
     }
-
+    
     public interface Block {
         void go() throws Exception;
     }
@@ -22,8 +23,7 @@ public class Utils {
         T go() throws Exception;
     }
     
-    //And because these overload it only looks like I'm importing one name.
-    public static void unsafe(Block t) {
+    public static void unchecked(Block t) {
         try {
             t.go();
         } catch(Exception e) {
@@ -31,7 +31,7 @@ public class Utils {
         }
     }
     
-    public static <T> T unsafe(NoArgFn<T> f) {
+    public static <T> T unchecked(NoArgFn<T> f) {
         try {
             return f.go();
         } catch(Exception e) {

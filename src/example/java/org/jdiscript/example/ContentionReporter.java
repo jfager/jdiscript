@@ -1,7 +1,7 @@
 package org.jdiscript.example;
 
 import static org.jdiscript.util.Utils.println;
-import static org.jdiscript.util.Utils.unsafe;
+import static org.jdiscript.util.Utils.unchecked;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,13 +11,12 @@ import org.jdiscript.JDIScript;
 import org.jdiscript.handlers.OnMonitorContendedEnter;
 import org.jdiscript.util.VMSocketAttacher;
 
-import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
 
 class ContentionReporter {
-
+    
     public static void main(String[] args) {
         VirtualMachine vm = new VMSocketAttacher(12345).attach();
         JDIScript j = new JDIScript(vm);
@@ -39,7 +38,7 @@ class ContentionReporter {
             ContentionTracker t = contended.computeIfAbsent(e.location().toString(),
                                                             k -> new ContentionTracker());
 
-            unsafe(() -> {
+            unchecked(() -> {
                 t.counter += 1;
                 t.monitorIds.merge(mref.uniqueID(), 1, add);
                 t.callers.merge(tref.frame(1).location().toString(), 1, add);

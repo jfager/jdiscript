@@ -2,7 +2,7 @@ package org.jdiscript.example;
 
 import static org.jdiscript.util.Utils.println;
 import static org.jdiscript.util.Utils.repeat;
-import static org.jdiscript.util.Utils.unsafe;
+import static org.jdiscript.util.Utils.unchecked;
 
 import java.util.Stack;
 import java.util.function.Consumer;
@@ -47,7 +47,7 @@ class ConstructorWatchExample {
         
             //Make sure that when we leave the interesting method call, we turn
             //all of the constructor breakpoints back off.
-            unsafe(() -> j.onCurrentMethodExit(be.thread(), e -> {
+            unchecked(() -> j.onCurrentMethodExit(be.thread(), e -> {
                 stack.pop();
                 if(stack.size() == 0) { 
                     j.breakpointRequests(breakpoint).forEach(bp ->
@@ -56,7 +56,7 @@ class ConstructorWatchExample {
                 }
             }));
         } else {
-            unsafe(() -> j.onCurrentMethodExit(be.thread(), e -> stack.pop()));
+            unchecked(() -> j.onCurrentMethodExit(be.thread(), e -> stack.pop()));
         }
     };}
 
