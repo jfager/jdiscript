@@ -26,15 +26,12 @@ jdiscript provides
 - A set of [FunctionalInterfaces](http://download.java.net/jdk8/docs/api/java/lang/FunctionalInterface.html) 
   so you can use lambdas.
 
-- Classes that handle the boilerplate of [launching](src/main/java/org/jdiscript/util/VMLauncher.java)  
-  or [attaching to](src/main/java/org/jdiscript/util/VMSocketAttacher.java) 
-  a [VirtualMachine](http://download.java.net/jdk8/docs/jdk/api/jpda/jdi/index.html?com/sun/jdi/VirtualMachine.html).
+- Classes that handle the boilerplate of [launching](src/main/java/org/jdiscript/util/VMLauncher.java) or [attaching to](src/main/java/org/jdiscript/util/VMSocketAttacher.java) a [VirtualMachine](http://download.java.net/jdk8/docs/jdk/api/jpda/jdi/index.html?com/sun/jdi/VirtualMachine.html).
 
-- A [JDIScript class](src/main/java/org/jdiscript/JDIScript.java) that ties it all together and
-  provides convenience methods for common script patterns.
+- A [JDIScript class](src/main/java/org/jdiscript/JDIScript.java) that ties it all together and provides convenience methods for common script patterns.
 
 jdiscript was originally focused on providing an API that you would use from languages like 
-Groovy, JRuby, and Clojure, under the belief that Java itself was too verbose for a nice 
+Groovy, JRuby, or Clojure, under the belief that Java itself was too verbose for a nice 
 scripting experience.  With Java 8, this has changed, and straight Java is now compact enough 
 that it might not be worth the overhead of switching to another language.  All examples that
 ship with jdiscript have been converted to Java 8.   
