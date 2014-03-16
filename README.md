@@ -36,3 +36,5 @@ scripting experience.  With Java 8, this has changed, and straight Java is now c
 that it might not be worth the overhead of switching to another language.  All examples that
 ship with jdiscript have been converted to Java 8.   
 
+Note: you need to have the jdk's tools.jar on your classpath in order to use the JDI.
+
