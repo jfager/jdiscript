@@ -589,8 +589,6 @@ public class JDIScript {
      * <p>
      * TODO: what should this return?
      *
-     * @param className  A class name suitable for use by
-     *                   {@link ClassPrepareRequest#addClassFilter(String)}
      * @param handler    The callback to execute when the class is prepped.
      */
     public void onClassPrep(final OnClassPrepare handler) {
@@ -813,7 +811,7 @@ public class JDIScript {
      */
     @SuppressWarnings("unchecked")
     public <K extends DebugEventHandler> K once(K handler) {
-    	return (K)new Once(handler);
+    	return (K)new Once(vm, handler);
     }
     
     public String fullName(Method method) {

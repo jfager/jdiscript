@@ -24,18 +24,14 @@ public class BaseEventHandler
                OnWatchpoint
 {
 
-    private VirtualMachine vm;
+    private final VirtualMachine vm;
 
-    public void setVM(VirtualMachine vm) {
+    public BaseEventHandler(VirtualMachine vm) {
         this.vm = vm;
     }
 
     public VirtualMachine vm() {
         return vm;
-    }
-
-    public void notifySuspendPolicy(int suspendPolicy) {
-        // do nothing
     }
 
     public void accessWatchpoint(AccessWatchpointEvent e) {
