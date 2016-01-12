@@ -1,4 +1,6 @@
-package cern.accsoft.lhc.inspector;
+package demo;
+
+import cern.accsoft.lhc.inspector.Inspector;
 
 /**
  * A class that is inspectable, i. e. where the {@link #run()} method will be inspected one instruction at a time.

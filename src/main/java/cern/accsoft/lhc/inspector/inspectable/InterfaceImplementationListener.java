@@ -1,4 +1,4 @@
-package cern.accsoft.lhc.inspector.handlers;
+package cern.accsoft.lhc.inspector.inspectable;
 
 import com.sun.jdi.ClassType;
 import com.sun.jdi.InterfaceType;
@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * An {@link OnClassPrepare} implementation which keeps track of new implementations of a given interface
  * ({@link com.sun.jdi.InterfaceType}).
  */
-public class ImplementorReferenceCounter implements OnClassPrepare {
+public class InterfaceImplementationListener implements OnClassPrepare {
 
     private final Consumer<ClassType> implementorCallback;
     private final Class<?> implementorInterface;
@@ -21,7 +21,7 @@ public class ImplementorReferenceCounter implements OnClassPrepare {
     private Set<ClassType> currentImplementations = Collections.emptySet();
     private InterfaceType implementorType;
 
-    public ImplementorReferenceCounter(Class<?> implementorInterface, Consumer<ClassType> implementorCallback) {
+    public InterfaceImplementationListener(Class<?> implementorInterface, Consumer<ClassType> implementorCallback) {
         this.implementorInterface = implementorInterface;
         this.implementorCallback = implementorCallback;
     }

@@ -1,4 +1,5 @@
-package cern.accsoft.lhc.inspector;
+package demo;
+
 
 class HelloWorld implements Inspectable {
 
