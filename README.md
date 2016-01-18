@@ -1,4 +1,4 @@
-[![Travis build status](https://travis-ci.org/Jegp/jarrace.svg?branch=master)](https://travis-ci.org/jegp/jarrace)
+[![Travis build status](https://travis-ci.org/Jegp/jarrace.svg?branch=master)](https://travis-ci.org/Jegp/jarrace)
 
 A dynamic build system where jar files can be spawned on new JVM instances and controlled live by the user.
 
