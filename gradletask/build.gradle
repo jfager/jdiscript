@@ -45,16 +45,16 @@ class DeployRacePlugin implements Plugin<Project> {
 
             String jarName = project.name + '-all'
             Path path = Paths.get("$project.buildDir/libs/" + jarName + ".jar")
-            System.out.println(path)
             InputStream input = Files.newInputStream(path, StandardOpenOption.READ)
 
 
             String headerList = "testServices"
-            URL url = new URL("http://localhost:8080")
+            URL url = new URL("http://localhost:8080/agent/deploy/gradletask")
             HttpURLConnection connection = (HttpURLConnection) url.openConnection()
             connection.setRequestMethod("POST")
             connection.setRequestProperty("Content-Type", "application/octet-stream")
             connection.setRequestProperty(headerList, fileList)
+            connection.setDoOutput(true)
             OutputStream output = connection.getOutputStream()
 
             int bufferSize = 4096
