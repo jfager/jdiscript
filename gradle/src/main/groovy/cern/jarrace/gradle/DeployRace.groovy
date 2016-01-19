@@ -1,39 +1,31 @@
+package cern.jarrace.gradle
+
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.jvm.tasks.Jar
+
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.regex.Pattern
 
-version 'unspecified'
-
-apply plugin: 'java'
-apply plugin: DeployRacePlugin
-
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    compile group: 'junit', name: 'junit', version: '4.12'
-}
-
-task raceJar(type: Jar) {
-    description = "Creates a deployable jar"
-
-    baseName = project.name + '-all'
-    // Include all compile dependencies (fatjar)
-    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-    // Include all source code for this project
-    from sourceSets.main.allSource
-}
-
-class DeployRacePlugin implements Plugin<Project> {
+class DeployRace implements Plugin<Project> {
 
     void apply(Project project) {
 
-        project.task('deployRace').dependsOn('classes', 'raceJar') << {
+        project.task('jarDeploy', type : Jar) {
+            description = "Creates a deployable jar"
+
+            baseName = project.name + '-all'
+            // Include all compile dependencies (fatjar)
+            from project.configurations.compile.collect { it.isDirectory() ? it : project.zipTree(it) }
+            // Include all source code for this project
+            from project.sourceSets.main.allSource
+        }
+
+        project.task('deployRace').dependsOn('classes', 'jarDeploy') << {
+
             Pattern testPattern = Pattern.compile("@Test");
             String fileList = project.sourceSets.main.allSource.filter { File file ->
                 file.find { line -> testPattern.matcher(line).find() } != null

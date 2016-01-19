@@ -11,3 +11,18 @@ repositories {
 dependencies {
     compile group: 'junit', name: 'junit', version: '4.12'
 }
+
+buildscript {
+    repositories {
+        maven {
+            String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + "localMaven"
+            new File(tmpDir).mkdir()
+            url uri("file://" + tmpDir)
+        }
+    }
+    dependencies {
+        classpath group: 'cern.jarrace', name: 'gradle', version: '0.1'
+    }
+}
+
+apply plugin: 'cern.jarrace.gradle'
