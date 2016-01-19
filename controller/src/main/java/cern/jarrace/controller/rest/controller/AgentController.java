@@ -6,9 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 
 /**
@@ -26,7 +24,7 @@ public class AgentController {
     private AgentRepository agentRepository;
 
     @RequestMapping(value = "/deploy/{agentName}", method = RequestMethod.POST)
-    public String deploy(@PathVariable("agentName") String agentName, @RequestBody String requestBody){
+    public String deploy(@PathVariable("agentName") String agentName, @RequestBody byte[] requestBody){
 
         String status = "";
 
@@ -40,7 +38,7 @@ public class AgentController {
 
         try {
             deploymentFile.createNewFile();
-            FileWriter writer = new FileWriter(deploymentFile);
+            OutputStream writer = new FileOutputStream(deploymentFile);
             writer.write(requestBody);
             writer.flush();
             writer.close();
