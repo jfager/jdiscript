@@ -67,6 +67,8 @@ class DeployRacePlugin implements Plugin<Project> {
             output.close()
 
             System.out.println(connection.getResponseCode())
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))
+            System.out.println(reader.readLine())
 
         }
     }

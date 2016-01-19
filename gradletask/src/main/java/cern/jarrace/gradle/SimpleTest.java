@@ -1,3 +1,5 @@
+package cern.jarrace.gradle;
+
 import org.junit.Test;
 
 /**
