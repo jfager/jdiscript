@@ -1,6 +1,8 @@
 package cern.jarrace.controller.domain;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Domain class that represents an agent deployed to the controller
@@ -17,6 +19,9 @@ public class Agent {
 
     @Column(name = "NAME", unique = true)
     private String name;
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "agent", cascade = CascadeType.ALL)
+    private final List<Service> services = new ArrayList<>();
 
     // JPA mandatory default constructor
     public Agent() {
@@ -42,30 +47,22 @@ public class Agent {
         this.name = name;
     }
 
-    @Override
-    public String toString() {
-        return "Agent{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                '}';
+    public List<Service> getServices() {
+        return new ArrayList<>(services);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Agent agent = (Agent) o;
-
-        if (id != null ? !id.equals(agent.id) : agent.id != null) return false;
-        return name != null ? name.equals(agent.name) : agent.name == null;
-
+    public void addService(Service service) {
+        services.add(service);
+        if(service.getAgent() != this) {
+            service.setAgent(this);
+        }
     }
 
-    @Override
-    public int hashCode() {
-        int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        return result;
+    public void removeService(Service service) {
+        services.remove(service);
+    }
+
+    public void clearServices() {
+        services.clear();
     }
 }
