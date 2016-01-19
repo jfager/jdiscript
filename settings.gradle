@@ -1,4 +1,5 @@
 include 'agent'
 include 'gradletask'
 include 'controller'
+include 'demo'
 
