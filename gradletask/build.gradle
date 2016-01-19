@@ -1,13 +1,73 @@
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.util.regex.Pattern
+
 version 'unspecified'
 
 apply plugin: 'java'
+apply plugin: DeployRacePlugin
 
-sourceCompatibility = 1.5
+sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile group: 'junit', name: 'junit', version: '4.12'
+}
+
+task raceJar(type: Jar) {
+    description = "Creates a deployable jar"
+
+    baseName = project.name + '-all'
+    // Include all compile dependencies (fatjar)
+    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    // Include all source code for this project
+    from sourceSets.main.allSource
+}
+
+class DeployRacePlugin implements Plugin<Project> {
+
+    void apply(Project project) {
+
+        project.task('deployRace').dependsOn('classes', 'raceJar') << {
+            Pattern testPattern = Pattern.compile("@Test");
+            String fileList = project.sourceSets.main.allSource.filter { File file ->
+                file.find { line -> testPattern.matcher(line).find() } != null
+            }.collect { File file ->
+                String name = file.toString()
+                String shortHand = name.substring(name.indexOf("java") + 5, name.length() - 5)
+                shortHand.replace("/", ".")
+            }.join(',')
+
+            String jarName = project.name + '-all'
+            Path path = Paths.get("$project.buildDir/libs/" + jarName + ".jar")
+            System.out.println(path)
+            InputStream input = Files.newInputStream(path, StandardOpenOption.READ)
+
+
+            String headerList = "testServices"
+            URL url = new URL("http://localhost:8080")
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection()
+            connection.setRequestMethod("POST")
+            connection.setRequestProperty("Content-Type", "application/octet-stream")
+            connection.setRequestProperty(headerList, fileList)
+            OutputStream output = connection.getOutputStream()
+
+            int bufferSize = 4096
+            byte[] buffer = new byte[bufferSize]
+            int bytesRead = 0
+            while ((bytesRead = input.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead)
+            }
+            input.close()
+            output.close()
+
+            System.out.println(connection.getResponseCode())
+
+        }
+    }
 }
