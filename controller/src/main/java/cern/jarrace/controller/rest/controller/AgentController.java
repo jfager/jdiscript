@@ -32,7 +32,7 @@ public class AgentController {
     private ServiceRepository serviceRepository;
 
     @RequestMapping(value = "/deploy/{agentName}", method = RequestMethod.POST)
-    public String deploy(@PathVariable("agentName") String agentName, @RequestBody String requestBody,
+    public Agent deploy(@PathVariable("agentName") String agentName, @RequestBody String requestBody,
                          @RequestHeader(name = "testServices") List<String> services){
 
         String status = "";
@@ -76,7 +76,7 @@ public class AgentController {
             serviceRepository.save(service);
         }
 
-        return status;
+        return agent;
     }
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
