@@ -1,40 +1,46 @@
 package cern.jarrace.controller.rest.controller;
 
-import cern.jarrace.controller.db.repository.AgentContainerRepository;
-import cern.jarrace.controller.domain.AgentContainer;
+import cern.jarrace.controller.domain.Entrypoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author timartin
- * Controller that exposes services to manage {@link AgentContainer}s
+ * Controller that exposes services to manage {@link Entrypoint}s
  */
 @RestController
-@RequestMapping("/jarrace/container")
+@RequestMapping("/jarrace")
 public class AgentContainerController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentContainerController.class);
     private static final File DEPLOYMENT_DIR = new File(System.getProperty("java.io.tmpdir"));
 
-    @Autowired
-    private AgentContainerRepository agentContainerRepository;
+    private final Map<String, List<Entrypoint>> entrypoints = new HashMap<>();
 
-    @RequestMapping(value = "/deploy/{name}", method = RequestMethod.POST)
+    @RequestMapping(value = "/container/deploy/{name}", method = RequestMethod.POST)
     public void deploy(@PathVariable("name") String name, @RequestBody byte[] jar) throws IOException {
         String path = writeFile(name, jar);
+        entrypoints.put(name, new ArrayList<>());
         startContainer(path, name);
     }
 
+    @RequestMapping(value = "/service/register/{name}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public void registerService(@PathVariable(value = "name") String name, @RequestBody Entrypoint entrypoint){
+        entrypoints.get(name).add(entrypoint);
+    }
+
     private void startContainer(String path, String name) throws IOException {
-        String command = String.format("java -cp %s cern.jarrace.agent.AgentContainer %s %s", path, name, "localhost:8080");
+        String command = String.format("java -cp %s cern.jarrace.agent.Entrypoint %s %s", path, name, "localhost:8080");
         LOGGER.info(String.format("Starting agent container [%s]", command));
         new ProcessBuilder(command).start();
     }
@@ -50,21 +56,5 @@ public class AgentContainerController {
         outputStream.close();
         LOGGER.info("Deployed file + " + deploymentFile.getAbsolutePath());
         return deploymentFile.getAbsolutePath();
-    }
-
-    @RequestMapping(value = "/register/{name}", method = RequestMethod.POST)
-    public void register(@PathVariable(value = "name") String name, @RequestBody AgentContainer agentContainer) throws Exception {
-
-        if (agentContainerRepository.findOne(name) != null) {
-            throw new Exception("Agent container already registered");
-        }
-
-        agentContainer.setName(name);
-        agentContainerRepository.save(agentContainer);
-    }
-
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public List<AgentContainer> list() {
-        return agentContainerRepository.findAll();
     }
 }
