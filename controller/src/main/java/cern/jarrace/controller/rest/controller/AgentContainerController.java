@@ -29,16 +29,28 @@ public class AgentContainerController {
 
     @RequestMapping(value = "/deploy/{name}", method = RequestMethod.POST)
     public void deploy(@PathVariable("name") String name, @RequestBody byte[] jar) throws IOException {
-        File deploymentFile = DEPLOYMENT_DIR.toPath().resolve(name + ".jar").toFile();
+        String path = writeFile(name, jar);
+        startContainer(path);
+    }
 
+    private void startContainer(String path) throws IOException {
+        String command = String.format("java -cp %s cern.jarrace.agent.AgentContainer", path);
+        LOGGER.info(String.format("Starting agent container [%s]", command));
+        new ProcessBuilder(command).start();
+    }
+
+    private String writeFile(String name, byte[] jar) throws IOException {
+        File deploymentFile = DEPLOYMENT_DIR.toPath().resolve(name + ".jar").toFile();
         if (deploymentFile.exists()) {
             deploymentFile.delete();
         }
-
         deploymentFile.createNewFile();
         FileOutputStream outputStream = new FileOutputStream(deploymentFile);
         outputStream.write(jar);
         outputStream.close();
+        System.out.println("Deployed file + " + deploymentFile.getAbsolutePath());
+        LOGGER.info("Deployed file + " + deploymentFile.getAbsolutePath());
+        return deploymentFile.getAbsolutePath();
     }
 
     @RequestMapping(value = "/register/{name}", method = RequestMethod.POST)
