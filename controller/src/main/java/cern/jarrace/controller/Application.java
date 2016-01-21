@@ -5,9 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
 /**
- * Main entry point for the controller, instanciates an embedded Jetty container server, loads the
- * spring {@link org.springframework.web.servlet.DispatcherServlet} and configures all
- * the {@link org.springframework.web.bind.annotation.RestController}s
+ * Main entry point for the controller, instanciates an embedded Jetty container server, loads the spring
+ * {@link org.springframework.web.servlet.DispatcherServlet} and configures all the
+ * {@link org.springframework.web.bind.annotation.RestController}s
  * @author timartin
  */
 

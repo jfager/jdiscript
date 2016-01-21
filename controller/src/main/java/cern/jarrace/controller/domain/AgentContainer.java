@@ -6,23 +6,34 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * Created by timartin on 21/01/2016.
+ * @author timartin
+ * Domain class that represents a registered {@link AgentContainer}
  */
 
 @Entity
 @Table(name = "CONTAINER_TABLE")
 public class AgentContainer {
 
+    /**
+     * Unique identifier for the {@link AgentContainer}
+     */
     @Id
     @Column(name = "NAME", unique = true)
     String name;
 
+    /**
+     * Port used by the {@link AgentContainer} to expose its services
+     */
     @Column(name = "PORT", nullable = false)
     int port;
 
+    /**
+     * Host where the {@link AgentContainer} is running
+     */
     @Column(name = "HOST", nullable = false)
     String host;
 
+    // Needed by the JPA specification
     public AgentContainer() {
     }
 

@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * @author timartin
- *         Controller that exposes services to manage agents
+ * Controller that exposes services to manage {@link AgentContainer}s
  */
 @RestController
 @RequestMapping("/jarrace/container")
@@ -48,7 +48,6 @@ public class AgentContainerController {
         FileOutputStream outputStream = new FileOutputStream(deploymentFile);
         outputStream.write(jar);
         outputStream.close();
-        System.out.println("Deployed file + " + deploymentFile.getAbsolutePath());
         LOGGER.info("Deployed file + " + deploymentFile.getAbsolutePath());
         return deploymentFile.getAbsolutePath();
     }
