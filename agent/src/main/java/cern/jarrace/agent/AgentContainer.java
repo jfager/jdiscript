@@ -1,5 +1,7 @@
 package cern.jarrace.agent;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.impetus.annovention.ClasspathDiscoverer;
 import com.impetus.annovention.Discoverer;
 import com.impetus.annovention.listener.ClassAnnotationObjectDiscoveryListener;
@@ -12,8 +14,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import sun.management.resources.agent;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.net.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,11 +26,19 @@ import java.util.Map;
 @SpringBootApplication
 public class AgentContainer {
 
-    private static final String[] SUPPORTED_ANNOTATIONS = new String[]{"cern.jarrace.agent.RunWithAgent"};
-
-    private final Map<Agent, Map<Class<?>, List<Method>>> agents = new HashMap<>();
+    private static final Map<Agent, Map<Class<?>, List<Method>>> agents = new HashMap<>();
 
     public static void main(String[] args) {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Expected one argument (host[:port]), but received " + args.length);
+        }
+
+        final String stringUri = args[0];
+
+        final String controllerEndpoint = "http://" + stringUri;
+        ContainerDiscoverer.discover(agents);
+        //registerServices(controllerEndpoint);
+
         ApplicationContext ctx = SpringApplication.run(AgentContainer.class, args);
     }
 
@@ -38,53 +51,22 @@ public class AgentContainer {
         return agents;
     }
 
-    public void discover() {
-        Discoverer discoverer = new ClasspathDiscoverer();
-        discoverer.addAnnotationListener(new ClassAnnotationObjectDiscoveryListener() {
-            @Override
-            public void discovered(ClassFile clazz, Annotation annotation) {
-                try {
-
-                    //ClassMemberValue cmv = (ClassMemberValue)annotation.getMemberValue("value");
-
-
-                    Class<?> mClazz = Class.forName(clazz.getName());
-                    RunWithAgent agentAnnotation = mClazz.getAnnotation(RunWithAgent.class);
-                    Agent agent = agents.keySet().stream()
-                            .filter((Agent key) -> key.getClass().equals(agentAnnotation.value())).findAny().orElseGet(() -> {
-                                Constructor constructor = null;
-                                try {
-                                    constructor = agentAnnotation.value().getConstructor();
-                                    Agent newAgent = (Agent) constructor.newInstance();
-                                    newAgent.initialize();
-                                    agents.put(newAgent, new HashMap<>());
-                                    return newAgent;
-                                } catch ( Exception e) {
-                                    e.printStackTrace();
-                                }
-
-                                return null;
-                            });
-                    Map<Class<?>, List<Method>> agentMethods = agents.get(agent);
-                    try {
-                        Class<?> classDefinition = Class.forName(clazz.getName());
-                        agentMethods.put(classDefinition, agent.discover(classDefinition));
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
-                }
-
-                @Override
-                public String[] supportedAnnotations () {
-                    return SUPPORTED_ANNOTATIONS;
-                }
+    private static void registerServices(String controllerEndpoint) {
+        agents.values().stream().forEach(map -> {
+            try {
+                URL registerUrl = new URL(controllerEndpoint + "/jarrace/container/register/test");
+                HttpURLConnection connection = (HttpURLConnection) registerUrl.openConnection();
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.writeValue(connection.getOutputStream(), map);
+                System.out.println(connection.getResponseCode());
+            } catch (MalformedURLException e) {
+                throw new IllegalArgumentException(
+                        String.format("Expected URI in form of host[:port], but received %s: %s", controllerEndpoint, e));
+            }  catch (IOException e) {
+                throw new RuntimeException(
+                    String.format("failed to register container in the controller: %s", e));
             }
-
-            );
-            discoverer.discover(true,false,false,false,true,true);
-        }
-
+        });
     }
+
+}
