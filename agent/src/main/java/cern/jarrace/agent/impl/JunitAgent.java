@@ -31,11 +31,11 @@ public class JunitAgent implements Agent {
     }
 
     @Override
-    public void run(List<String> args, String classPath) throws IOException {
+    public void run(String entry, String classPath) throws IOException {
         StringBuilder stringBuilder = new StringBuilder("java -cp ");
         stringBuilder.append(classPath);
-        stringBuilder.append("org.junit.runner.JUnitCore");
-        stringBuilder.append(args.stream().collect(Collectors.joining(" ")));
+        stringBuilder.append(" org.junit.runner.JUnitCore ");
+        stringBuilder.append(entry);
         ProcessBuilder processBuilder = new ProcessBuilder(stringBuilder.toString());
         processBuilder.start();
     }
