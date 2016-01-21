@@ -6,13 +6,18 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+
+    flatDir {
+        dirs 'libs'
+    }
 }
 
 dependencies {
     compile group: 'junit', name: 'junit', version: '4.12'
+    compile name: 'agent-0.1'
 }
 
-/*buildscript {
+buildscript {
     repositories {
         maven {
             String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + "localMaven"
@@ -25,5 +30,5 @@ dependencies {
     }
 }
 
-apply plugin: 'cern.jarrace.gradle'*/
+apply plugin: 'cern.jarrace.gradle'
 

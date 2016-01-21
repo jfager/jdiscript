@@ -41,7 +41,7 @@ class DeployRace implements Plugin<Project> {
 
 
             String headerList = "testServices"
-            URL url = new URL("http://localhost:8080/agent/deploy/gradletask")
+            URL url = new URL("http://localhost:8080/jarrace/container/deploy/gradletask")
             HttpURLConnection connection = (HttpURLConnection) url.openConnection()
             connection.setRequestMethod("POST")
             connection.setRequestProperty("Content-Type", "application/octet-stream")

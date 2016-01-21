@@ -1,24 +1,17 @@
 package cern.jarrace.agent;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.impetus.annovention.ClasspathDiscoverer;
-import com.impetus.annovention.Discoverer;
-import com.impetus.annovention.listener.ClassAnnotationObjectDiscoveryListener;
-import javassist.bytecode.ClassFile;
-import javassist.bytecode.annotation.Annotation;
-import javassist.bytecode.annotation.ClassMemberValue;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerFactory;
+import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import sun.management.resources.agent;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.net.*;
-import java.util.Arrays;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,17 +20,19 @@ import java.util.Map;
 public class AgentContainer {
 
     private static final Map<Agent, Map<Class<?>, List<Method>>> agents = new HashMap<>();
+    private static int serverPort = 33333;
 
     public static void main(String[] args) {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Expected one argument (host[:port]), but received " + args.length);
-        }
-
-        final String stringUri = args[0];
-
-        final String controllerEndpoint = "http://" + stringUri;
-        ContainerDiscoverer.discover(agents);
-        //registerServices(controllerEndpoint);
+//        if (args.length != 2) {
+//            throw new IllegalArgumentException("Expected one argument (host[:port]), but received " + args.length);
+//        }
+//
+//        final String name = args[0];
+//        final String stringUri = args[1];
+//
+//        final String controllerEndpoint = "http://" + stringUri;
+//        ContainerDiscoverer.discover(agents);
+//        registerServices(name, controllerEndpoint);
 
         ApplicationContext ctx = SpringApplication.run(AgentContainer.class, args);
     }
@@ -47,17 +42,25 @@ public class AgentContainer {
         return new AgentContainer();
     }
 
+    @Bean
+    public EmbeddedServletContainerFactory getFactory() {
+        JettyEmbeddedServletContainerFactory jettyEmbeddedServletContainerFactory = new JettyEmbeddedServletContainerFactory();
+        jettyEmbeddedServletContainerFactory.setPort(serverPort);
+        return jettyEmbeddedServletContainerFactory;
+    }
+
     public Map<Agent, Map<Class<?>, List<Method>>> getAgents() {
         return agents;
     }
 
-    private static void registerServices(String controllerEndpoint) {
+    private static void registerServices(String name, String controllerEndpoint) {
         agents.values().stream().forEach(map -> {
             try {
-                URL registerUrl = new URL(controllerEndpoint + "/jarrace/container/register/test");
+                URL registerUrl = new URL(controllerEndpoint + "/jarrace/container/register/" + name);
                 HttpURLConnection connection = (HttpURLConnection) registerUrl.openConnection();
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.writeValue(connection.getOutputStream(), map);
+                String response = "{\"port\":"+ serverPort + ",\"host\":\"localhost\"}";
+                System.out.println(response);
+                connection.getOutputStream().write(response.getBytes());
                 System.out.println(connection.getResponseCode());
             } catch (MalformedURLException e) {
                 throw new IllegalArgumentException(

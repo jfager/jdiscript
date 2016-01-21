@@ -28,3 +28,7 @@ dependencies {
     compile files("${System.properties['java.home']}/../lib/tools.jar")
     compile  group: 'junit', name: 'junit', version: '4.11'
 }
+
+task fatJar(type : Jar) {
+    from configurations.compile.collect { it.isDirectory() ? it : project.zipTree(it) } with jar
+}

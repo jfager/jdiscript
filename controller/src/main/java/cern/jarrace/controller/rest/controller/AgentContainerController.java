@@ -30,11 +30,11 @@ public class AgentContainerController {
     @RequestMapping(value = "/deploy/{name}", method = RequestMethod.POST)
     public void deploy(@PathVariable("name") String name, @RequestBody byte[] jar) throws IOException {
         String path = writeFile(name, jar);
-        startContainer(path);
+        startContainer(path, name);
     }
 
-    private void startContainer(String path) throws IOException {
-        String command = String.format("java -cp %s cern.jarrace.agent.AgentContainer", path);
+    private void startContainer(String path, String name) throws IOException {
+        String command = String.format("java -cp %s cern.jarrace.agent.AgentContainer %s %s", path, name, "localhost:8080");
         LOGGER.info(String.format("Starting agent container [%s]", command));
         new ProcessBuilder(command).start();
     }

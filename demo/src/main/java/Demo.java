@@ -6,7 +6,7 @@ import cern.jarrace.agent.AgentContainer;
 public class Demo {
 
     public static void main(String args[]) {
-        AgentContainer.main(new String[] {"localhost"});
+        AgentContainer.main(new String[] {"name", "localhost"});
     }
 
 }
