@@ -19,8 +19,7 @@ public class ContainerController {
 
     @RequestMapping("/list")
     public Set<Agent> listAgents() {
+        agentContainer.discover();
         return agentContainer.getAgents().keySet();
     }
-
-
 }

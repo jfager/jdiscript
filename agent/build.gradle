@@ -26,5 +26,5 @@ dependencies {
     compile 'tv.cntt:annovention:1.7'
 
     compile files("${System.properties['java.home']}/../lib/tools.jar")
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile  group: 'junit', name: 'junit', version: '4.11'
 }

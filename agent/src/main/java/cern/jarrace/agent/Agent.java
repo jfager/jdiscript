@@ -1,5 +1,6 @@
 package cern.jarrace.agent;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -14,14 +15,11 @@ public interface Agent {
      * Discover the endpoints
      * @return {@link List} of endpoints
      */
-    public List<Method> discover(Class<?> clazz);
+    List<Method> discover(Class<?> clazz);
 
     /**
      * Executes a specified method using reflexion
-     * @param method Method to be executed
+     * @param args Method to be executed
      */
-    public void run(Method method);
-
-
-
+    void run(List<String> args, String classPath) throws IOException;
 }
