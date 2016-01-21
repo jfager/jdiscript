@@ -29,6 +29,7 @@ public class AgentContainerController {
 
     @RequestMapping(value = "/container/deploy/{name}", method = RequestMethod.POST)
     public void deploy(@PathVariable("name") String name, @RequestBody byte[] jar) throws IOException {
+        System.out.println("Deployed " + name);
         String path = writeFile(name, jar);
         entrypoints.put(name, new ArrayList<>());
         startContainer(path, name);
@@ -36,11 +37,14 @@ public class AgentContainerController {
 
     @RequestMapping(value = "/service/register/{name}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public void registerService(@PathVariable(value = "name") String name, @RequestBody Entrypoint entrypoint){
+        System.out.println(name);
         entrypoints.get(name).add(entrypoint);
+        LOGGER.info(entrypoints.toString());
     }
 
     private void startContainer(String path, String name) throws IOException {
-        String command = String.format("java -cp %s cern.jarrace.agent.Entrypoint %s %s", path, name, "localhost:8080");
+        //String command = String.format("java -cp %s cern.jarrace.agent.AgentContainer %s %s", path, name, "localhost:8080");
+        String command = "java -version";
         LOGGER.info(String.format("Starting agent container [%s]", command));
         new ProcessBuilder(command).start();
     }

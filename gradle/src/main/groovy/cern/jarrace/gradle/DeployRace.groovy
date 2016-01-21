@@ -19,9 +19,9 @@ class DeployRace implements Plugin<Project> {
 
             baseName = project.name + '-all'
             // Include all compile dependencies (fatjar)
-            from project.configurations.compile.collect { it.isDirectory() ? it : project.zipTree(it) }
+            from project.configurations.compile.collect { it.isDirectory() ? it : project.zipTree(it) } with project.jar
             // Include all source code for this project
-            from project.sourceSets.main.allSource
+            //from project.sourceSets.main.allSource
         }
 
         project.task('deployRace').dependsOn('classes', 'jarDeploy') << {

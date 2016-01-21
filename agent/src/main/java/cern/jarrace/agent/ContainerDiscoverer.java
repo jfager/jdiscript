@@ -8,6 +8,7 @@ import javassist.bytecode.annotation.Annotation;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class ContainerDiscoverer {
                      @Override
                      public void discovered(ClassFile clazz, Annotation annotation) {
                          try {
-
+                            System.out.println("Found " + clazz);
                              Class<?> mClazz = Class.forName(clazz.getName());
                              RunWithAgent agentAnnotation = mClazz.getAnnotation(RunWithAgent.class);
                              Agent agent = agents.keySet().stream()
