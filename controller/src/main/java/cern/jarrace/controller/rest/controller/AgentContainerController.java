@@ -51,12 +51,13 @@ public class AgentContainerController {
 
     private void startContainer(String path, String name) throws IOException {
         List<String> command = new ArrayList<>();
-        command.add(String.format("\"%s/bin/java\"", System.getProperty("java.home")));
+        command.add(String.format("%s/bin/java", System.getProperty("java.home")));
         command.add("-cp");
         command.add(path);
         command.add("cern.jarrace.agent.AgentContainer");
         command.add(name);
         command.add("localhost:8080");
+
         LOGGER.info(String.format("Starting agent container [%s]", command.toString()));
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.inheritIO().start();
