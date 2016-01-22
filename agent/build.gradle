@@ -1,6 +1,10 @@
 version '0.1'
 
 apply plugin: 'java'
+apply plugin: 'maven'
+
+group = "cern.jarrace"
+version = "0.1"
 
 sourceCompatibility = 1.8
 
@@ -17,4 +21,14 @@ dependencies {
 
 task fatJar(type : Jar) {
     from configurations.compile.collect { it.isDirectory() ? it : project.zipTree(it) } with jar
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + "localMaven"
+            new File(tmpDir).mkdir()
+            repository(url: "file://" + tmpDir)
+        }
+    }
 }
