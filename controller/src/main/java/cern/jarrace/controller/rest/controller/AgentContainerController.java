@@ -9,10 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author timartin
@@ -25,13 +22,13 @@ public class AgentContainerController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentContainerController.class);
     private static final File DEPLOYMENT_DIR = new File(System.getProperty("java.io.tmpdir"));
 
-    private final Map<String, List<Entrypoint>> entrypoints = new HashMap<>();
+    private final Map<String, Set<Entrypoint>> entrypoints = new HashMap<>();
 
     @RequestMapping(value = "/container/deploy/{name}", method = RequestMethod.POST)
     public void deploy(@PathVariable("name") String name, @RequestBody byte[] jar) throws IOException {
         System.out.println("Deployed " + name);
         String path = writeFile(name, jar);
-        entrypoints.put(name, new ArrayList<>());
+        entrypoints.put(name, new HashSet<>());
         startContainer(path, name);
     }
 
@@ -42,11 +39,27 @@ public class AgentContainerController {
         LOGGER.info(entrypoints.toString());
     }
 
+    @RequestMapping(value = "/container/list")
+    public Set<String> listContainers() {
+        return entrypoints.keySet();
+    }
+
+    @RequestMapping(value = "/{name}/entrypoint/list")
+    public Set<Entrypoint> listServices(@PathVariable(value = "name") String containerName) {
+        return entrypoints.get(containerName);
+    }
+
     private void startContainer(String path, String name) throws IOException {
-        //String command = String.format("java -cp %s cern.jarrace.agent.AgentContainer %s %s", path, name, "localhost:8080");
-        String command = "java -version";
-        LOGGER.info(String.format("Starting agent container [%s]", command));
-        new ProcessBuilder(command).start();
+        List<String> command = new ArrayList<>();
+        command.add(String.format("\"%s/bin/java\"", System.getProperty("java.home")));
+        command.add("-cp");
+        command.add(path);
+        command.add("cern.jarrace.agent.AgentContainer");
+        command.add(name);
+        command.add("localhost:8080");
+        LOGGER.info(String.format("Starting agent container [%s]", command.toString()));
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.inheritIO().start();
     }
 
     private String writeFile(String name, byte[] jar) throws IOException {

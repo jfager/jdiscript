@@ -68,7 +68,9 @@ public class ContainerDiscoverer {
                  }
 
         );
+        System.out.println("Starting Discovery");
         discoverer.discover(true,false,false,false,true,true);
+        System.out.println("Finished Discovery");
     }
 
 }

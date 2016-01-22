@@ -54,7 +54,7 @@ public class AgentContainer {
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setDoOutput(true);
             final String entry = clazz.getName() + " " + method.getName();
-            String response = "{\"agent\":\"" + agent.getClass().getName() + "\",\"entry\":\"" + entry + "\"}";
+            String response = "{\"agentName\":\"" + agent.getClass().getName() + "\",\"path\":\"" + entry + "\"}";
             System.out.println(response);
             connection.getOutputStream().write(response.getBytes());
             System.out.println(connection.getResponseCode());
