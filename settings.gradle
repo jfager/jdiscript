@@ -1,6 +1,4 @@
-include 'value'
 include 'agent'
 include 'gradle'
 include 'controller'
-include 'demo'
 
