@@ -1,19 +1,16 @@
 package cern.jarrace.agent.impl;
 
 import cern.jarrace.agent.Agent;
-import org.junit.Test;
-import org.junit.runner.JUnitCore;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by timartin on 20/01/2016.
+ * Created by timartin on 22/01/2016.
  */
-public class JunitAgent implements Agent {
-
+public class RunnableAgent implements Agent {
     @Override
     public void initialize() {
         // Nothing to do here
@@ -21,14 +18,15 @@ public class JunitAgent implements Agent {
 
     @Override
     public List<Method> discover(Class<?> clazz) {
-        List<Method> annotatedMethods = new ArrayList<>();
-        Method[] methods = clazz.getMethods();
-        for (Method method : methods) {
-            if(method.isAnnotationPresent(Test.class)) {
-                annotatedMethods.add(method);
+        if(Runnable.class.isAssignableFrom(clazz)) {
+            try {
+                return Collections.singletonList(clazz.getMethod("run"));
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
             }
         }
-        return annotatedMethods;
+
+        return Collections.emptyList();
     }
 
     @Override
@@ -36,8 +34,9 @@ public class JunitAgent implements Agent {
         String entry = (String) args[0];
         try {
             Class<?> c = Class.forName(entry.substring(0, entry.indexOf(' ')));
-            JUnitCore.runClasses(c);
-        } catch (ClassNotFoundException e) {
+            Runnable runnable = (Runnable)c.getConstructor().newInstance();
+            runnable.run();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
