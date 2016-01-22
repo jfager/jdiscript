@@ -2,6 +2,7 @@ package cern.jarrace.agent.impl;
 
 import cern.jarrace.agent.Agent;
 import org.junit.Test;
+import org.junit.runner.JUnitCore;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -31,12 +32,13 @@ public class JunitAgent implements Agent {
     }
 
     @Override
-    public void run(String entry, String classPath) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder("java -cp ");
-        stringBuilder.append(classPath);
-        stringBuilder.append(" org.junit.runner.JUnitCore ");
-        stringBuilder.append(entry);
-        ProcessBuilder processBuilder = new ProcessBuilder(stringBuilder.toString());
-        processBuilder.start();
+    public void run(Object... args) throws IOException {
+        String entry = (String) args[0];
+        try {
+            Class<?> c = Class.forName(entry.substring(0, entry.indexOf(' ')));
+            JUnitCore.runClasses(c);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 }

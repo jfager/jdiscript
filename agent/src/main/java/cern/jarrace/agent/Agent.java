@@ -20,5 +20,5 @@ public interface Agent {
     /**
      * Executes a specified method using reflexion
      */
-    void run(String entry, String classPath) throws IOException;
+    void run(Object... args) throws IOException;
 }

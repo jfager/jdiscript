@@ -12,6 +12,6 @@ public class SimpleTest {
 
     @Test
     public void hello() {
-
+        System.out.println("Hello from number 1");
     }
 }
