@@ -1,31 +1,32 @@
 package cern.jarrace.controller.rest.controller;
 
 import cern.jarrace.controller.domain.Entrypoint;
+import org.hamcrest.core.IsEqual;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.HttpMediaTypeException;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.util.NestedServletException;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.*;
-
-import java.lang.reflect.Array;
+import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.nio.file.Path;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 /**
@@ -44,8 +45,32 @@ public class AgentContainerControllerTest {
     }
 
     @Test
-    public void testDeploy() throws Exception {
+    public void testDeployWithDifferentRequestTypes() throws Exception {
+        for (HttpMethod httpMethod : HttpMethod.values()) {
+            MockHttpServletRequestBuilder request = request(httpMethod, "/jarrace/container/deploy/SampleDeploy")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .content("SampleBytes".getBytes());
+            ResultActions perform = mockMvc.perform(request);
 
+            if (HttpMethod.POST.equals(httpMethod) || HttpMethod.OPTIONS.equals(httpMethod) || HttpMethod.TRACE.equals(httpMethod)) {
+                perform.andExpect(status().isOk());
+            } else {
+                perform.andExpect(status().isMethodNotAllowed());
+            }
+        }
+    }
+
+    @Test
+    public void testDeploy() throws Exception {
+        mockMvc.perform(post("/jarrace/container/deploy/SampleDeploy")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .content("SampleBytes".getBytes()));
+        Assert.assertEquals(1, agentContainerController.paths.size());
+        File deployFile = new File(agentContainerController.paths.get("SampleDeploy"));
+        Assert.assertTrue(deployFile.exists());
+        Assert.assertTrue(deployFile.isFile());
+        byte[] bytes = Files.readAllBytes(Paths.get(deployFile.getAbsolutePath()));
+        Assert.assertThat("SampleBytes".getBytes(), equalTo(bytes));
     }
 
     @Test
@@ -154,11 +179,6 @@ public class AgentContainerControllerTest {
         mockMvc.perform(get("/jarrace/SampleContainer1/entrypoint/list"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
-
-    }
-
-    @Test
-    public void testRunService() throws Exception {
 
     }
 }
