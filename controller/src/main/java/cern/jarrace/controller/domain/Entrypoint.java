@@ -31,6 +31,11 @@ public class Entrypoint {
     public Entrypoint() {
     }
 
+    public Entrypoint(String agentName, String path) {
+        this.agentName = agentName;
+        this.path = path;
+    }
+
     public String getAgentName() {
         return agentName;
     }

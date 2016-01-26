@@ -22,8 +22,8 @@ public class AgentContainerController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentContainerController.class);
     private static final File DEPLOYMENT_DIR = new File(System.getProperty("java.io.tmpdir"));
 
-    private final Map<String, List<Entrypoint>> entrypoints = new HashMap<>();
-    private final Map<String, String> paths = new HashMap<>();
+    final Map<String, List<Entrypoint>> entrypoints = new HashMap<>();
+    final Map<String, String> paths = new HashMap<>();
 
     @RequestMapping(value = "/container/deploy/{name}", method = RequestMethod.POST)
     public void deploy(@PathVariable("name") String name, @RequestBody byte[] jar) throws IOException {
@@ -38,20 +38,31 @@ public class AgentContainerController {
         startContainer(path, args);
     }
 
-    @RequestMapping(value = "/service/register/{name}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/service/register/{name}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public void registerService(@PathVariable(value = "name") String name, @RequestBody Entrypoint entrypoint){
+
+        if(entrypoint.getAgentName() == null || entrypoint.getAgentName().isEmpty()) {
+            throw new IllegalArgumentException("Agent name must be different than null and not empty");
+        }
+        if(entrypoint.getPath() == null || entrypoint.getPath().isEmpty()) {
+            throw new IllegalArgumentException("Path must be different than null and not empty");
+        }
         entrypoints.get(name).add(entrypoint);
         LOGGER.info(entrypoints.toString());
     }
 
-    @RequestMapping(value = "/container/list")
+    @RequestMapping(value = "/container/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public Set<String> listContainers() {
         return entrypoints.keySet();
     }
 
-    @RequestMapping(value = "/{name}/entrypoint/list")
+    @RequestMapping(value = "/{name}/entrypoint/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Entrypoint> listServices(@PathVariable(value = "name") String containerName) {
-        return entrypoints.get(containerName);
+        List<Entrypoint> toReturn = this.entrypoints.get(containerName);
+        if (toReturn == null) {
+            toReturn = new ArrayList<>();
+        }
+        return toReturn;
     }
 
     @RequestMapping(value = "/{name}/{entrypoint}/start", method = RequestMethod.GET)
