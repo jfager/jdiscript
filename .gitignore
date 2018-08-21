@@ -1,0 +1,7 @@
+**/target
+**/build
+build.properties
+*.class
+.gradle
+*.iml
+**/src/generated
