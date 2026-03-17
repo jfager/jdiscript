@@ -35,10 +35,17 @@ No GitHub Actions workflow exists. A minimal CI pipeline should:
 - Run `./gradlew build` on push and PR.
 - Test against Java 17 and 21.
 
-## Add Tests
+## Expand Test Coverage
 
-There are currently zero tests in the project. Useful starting points:
-- Unit tests for `Utils`, `VMLauncher`, `VMSocketAttacher`.
-- Integration tests that launch a simple target VM and verify event dispatch
-  (breakpoints, class prepare, method entry/exit).
-- Tests for the `DebugEventDispatcher` routing logic.
+Initial tests are in place (24 tests across 3 files):
+- `UtilsTest` — unit tests for the `unchecked()` wrapper.
+- `DebugEventDispatcherTest` — mock-based tests for event routing, handler
+  management, VM events, and edge cases.
+- `JDIScriptIntegrationTest` — launches a real target VM and verifies
+  breakpoints, class prepare, thread start, and `fullName()` formatting.
+
+Areas that could use additional coverage:
+- `VMLauncher` and `VMSocketAttacher` — startup and connection logic.
+- Watchpoint events (`AccessWatchpointEvent`, `ModificationWatchpointEvent`).
+- `MonitorContendedEnterEvent`, `MonitorWaitEvent`, and other less common events.
+- Error paths in `JDIScript.run()` (e.g. `VMDisconnectedException` handling).
