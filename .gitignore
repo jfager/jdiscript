@@ -4,4 +4,9 @@ build.properties
 *.class
 .gradle
 *.iml
+.idea/
 **/src/generated
+.DS_Store
+*.swp
+*.swo
+*~

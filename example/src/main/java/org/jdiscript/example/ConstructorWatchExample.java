@@ -1,7 +1,6 @@
 package org.jdiscript.example;
 
 import static org.jdiscript.util.Utils.println;
-import static org.jdiscript.util.Utils.repeat;
 
 import java.util.Stack;
 import java.util.function.Consumer;
@@ -26,7 +25,7 @@ class ConstructorWatchExample {
     //This references itself and so the compiler complains "Cannot 
     //reference a field before it is defined" if we try to initialize directly.
     OnBreakpoint breakpoint; { breakpoint = be -> {
-        println(repeat("  ", stack.size()) + "new " + be.location().declaringType().name());
+        println("  ".repeat(stack.size()) + "new " + be.location().declaringType().name());
         stack.push(be.location().method());
         
         //We set breakpoints on every constructor but initially only
