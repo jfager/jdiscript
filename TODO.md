@@ -99,7 +99,62 @@ large closures (e.g., serializing an entire SparkContext). Demonstrates
 breakpoints + argument inspection + `nearestCaller()` to find the user code
 responsible.
 
-**5. Shuffle Spill Monitor** — Watch for disk spill events by breaking on
+**5. Log Configuration Debugger (Dataproc / Spark Streaming)** — Attach to a
+Spark driver or executor running on Dataproc. The goal is to answer "where are
+my log settings actually coming from?" by intercepting the logging framework as
+it initializes and configures itself. This is a common pain point because
+Dataproc, Spark, YARN, and the application all compete to configure logging.
+
+Concrete things to intercept:
+
+- **Log4j 1.x** (still common on Dataproc):
+  - `PropertyConfigurator.doConfigure()` / `DOMConfigurator.doConfigure()` —
+    break here and inspect the argument to see which file/URL is being loaded.
+  - `LogManager.getRootLogger()` first call — dump all appenders and their
+    levels to show the effective configuration.
+  - `Category.setLevel()` / `Category.setPriority()` — catch runtime level
+    changes (Spark's `Utils.setLogLevel()`, Dataproc init scripts, etc.).
+  - `FileAppender.setFile()` — reveals where log files actually end up.
+
+- **Log4j 2.x** (newer Dataproc images):
+  - `ConfigurationFactory.getConfiguration()` — shows which configuration
+    source won (file, classpath resource, programmatic).
+  - `AbstractConfiguration.start()` — dump all loggers and appenders after
+    the configuration is built.
+  - `LoggerConfig.setLevel()` — catch runtime reconfiguration.
+
+- **SLF4J bridge detection**:
+  - `StaticLoggerBinder.getSingleton()` — shows which SLF4J binding is active
+    (logback, log4j-slf4j-impl, etc.). Multiple bindings on the classpath is a
+    common Spark/Dataproc problem.
+
+- **Spark-specific**:
+  - `org.apache.spark.internal.Logging.initializeLogging()` — this is where
+    Spark overrides your log config. Break here and inspect `log4j.properties`
+    resolution via `Utils.getSparkClassLoader().getResource("log4j.properties")`.
+  - Watch for `spark.driver.extraJavaOptions` and `spark.executor.extraJavaOptions`
+    containing `-Dlog4j.configuration=` — inspect system properties at startup.
+
+- **YARN / Dataproc layer**:
+  - `System.setProperty()` calls where the key starts with `log4j` — catches
+    YARN container launch scripts injecting log config overrides.
+  - `ClassLoader.getResource("log4j.properties")` — log every resolution
+    attempt to show classpath ordering issues (your jar's log4j.properties vs
+    Spark's vs Dataproc's).
+
+The script should produce a timeline report:
+1. Which config files/resources were found on the classpath (and in what order).
+2. Which one was actually loaded by the logging framework.
+3. Every subsequent level change, appender addition, or reconfiguration.
+4. The final effective configuration (all loggers, their levels, and appenders).
+
+This directly addresses the "I have no idea how my logs are getting configured"
+problem. Demonstrates `onClassPrep()` for late-loaded logging classes +
+`onMethodInvocation()` + argument/return value inspection + system property
+monitoring. Attaching to Dataproc requires SSH tunneling to the JDWP port
+(`gcloud compute ssh -- -L 5005:localhost:5005`).
+
+**6. Shuffle Spill Monitor** — Watch for disk spill events by breaking on
 `ExternalSorter.spill()` or `UnsafeExternalSorter.spill()`. Log memory
 pressure, partition counts, and stack traces when spills occur. Useful for
 tuning `spark.shuffle.spill.numElementsForceSpillThreshold` and partition
@@ -108,13 +163,13 @@ counts. Demonstrates `onClassPrep()` to handle late-loaded classes +
 
 ### Apache Flink
 
-**6. Checkpoint Stall Debugger** — Attach to a Flink TaskManager. Monitor
+**7. Checkpoint Stall Debugger** — Attach to a Flink TaskManager. Monitor
 `org.apache.flink.runtime.checkpoint.CheckpointBarrierHandler` to track
 barrier alignment timing. Flag when a subtask takes too long to process a
 barrier (a common cause of checkpoint timeouts). Demonstrates
 `onMethodInvocation()` with timing + thread-scoped state tracking.
 
-**7. Backpressure Source Locator** — Break on credit-based flow control methods
+**8. Backpressure Source Locator** — Break on credit-based flow control methods
 in Flink's network stack (`CreditBasedPartitionWriter`,
 `InputChannelRecoveredStateHandler`). Track which operators are consuming
 credits slowly and correlate with operator stack traces. Demonstrates
@@ -122,7 +177,7 @@ credits slowly and correlate with operator stack traces. Demonstrates
 
 ### Apache Kafka (Broker or Client)
 
-**8. Consumer Rebalance Tracer** — Attach to a Kafka consumer application.
+**9. Consumer Rebalance Tracer** — Attach to a Kafka consumer application.
 Break on `ConsumerCoordinator.onJoinComplete()` and
 `ConsumerRebalanceListener.onPartitionsRevoked()`. Log partition assignments,
 rebalance duration, and the stack trace triggering each rebalance. Useful for
@@ -132,13 +187,13 @@ extraction.
 
 ### Spring Boot / Spring Framework
 
-**9. Bean Initialization Profiler** — Attach during application startup. Break
+**10. Bean Initialization Profiler** — Attach during application startup. Break
 on `AbstractAutowireCapableBeanFactory.createBean()` and measure time to
 completion for each bean. Produce a ranked list of the slowest beans to
 initialize. Useful for diagnosing slow Spring Boot startup. Demonstrates
 `onMethodInvocation()` + `onCurrentMethodExit()` + return value inspection.
 
-**10. Transaction Boundary Visualizer** — Monitor
+**11. Transaction Boundary Visualizer** — Monitor
 `AbstractPlatformTransactionManager.getTransaction()` and `.commit()`/`.rollback()`.
 For each transaction, log its duration, the initiating call site (via
 `nearestCaller()`), and whether it committed or rolled back. Helps identify
@@ -146,7 +201,7 @@ long-running or unexpectedly-rolled-back transactions.
 
 ### Gradle / Maven (Build Tool Debugging)
 
-**11. Slow Build Task Profiler** — Attach to a Gradle daemon. Break on
+**12. Slow Build Task Profiler** — Attach to a Gradle daemon. Break on
 `org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute()`
 and time each task. Produce a ranked report of the slowest tasks. Useful
 alternative to `--profile` that can also capture stack traces of what each
@@ -154,7 +209,7 @@ task is doing when slow. Demonstrates attach-to-daemon workflow + method timing.
 
 ### HikariCP / JDBC Connection Pools
 
-**12. Connection Leak Detector** — Attach to any app using HikariCP. Break on
+**13. Connection Leak Detector** — Attach to any app using HikariCP. Break on
 `HikariPool.getConnection()` and `PoolEntry.recycle()`. Track which call sites
 borrow connections and how long they hold them. Flag connections held longer
 than a threshold (potential leaks) with full stack traces. Demonstrates
@@ -162,9 +217,10 @@ than a threshold (potential leaks) with full stack traces. Demonstrates
 
 ### Implementation Notes
 
-- Start with examples **1** (Slow Request Tracer), **9** (Bean Initialization
-  Profiler), and **12** (Connection Leak Detector) as they cover the most
-  common debugging scenarios and require the simplest setup.
+- Start with examples **1** (Slow Request Tracer), **5** (Log Configuration
+  Debugger), **10** (Bean Initialization Profiler), and **13** (Connection Leak
+  Detector) as they cover the most common debugging scenarios and require the
+  simplest setup.
 - Use embedded servers (embedded Tomcat/Jetty, Spring Boot jars) rather than
   full installations to keep examples self-contained.
 - Each example should handle `VMDisconnectedException` gracefully and print a
