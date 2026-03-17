@@ -18,6 +18,10 @@ configurations {
     testappRuntimeOnly.extendsFrom runtimeOnly
 }
 
+tasks.named('processTestappResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 dependencies {
     implementation project(':jdiscript')
 

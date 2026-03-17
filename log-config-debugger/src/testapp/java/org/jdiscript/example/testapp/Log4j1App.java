@@ -27,7 +27,7 @@ public class Log4j1App {
         // 1. Load config from classpath properties file
         //    -> triggers PropertyConfigurator.doConfigure
         PropertyConfigurator.configure(
-            Log4j1App.class.getClassLoader().getResource("log4j-test.properties"));
+            Log4j1App.class.getClassLoader().getResource("log4j-testapp.properties"));
 
         Logger root = Logger.getRootLogger();
         Logger appLogger = Logger.getLogger("com.example.myapp");

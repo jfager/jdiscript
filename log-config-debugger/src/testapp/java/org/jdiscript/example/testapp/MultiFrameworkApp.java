@@ -34,7 +34,7 @@ public class MultiFrameworkApp {
         // -> triggers SYS-PROPERTY
         // ---------------------------------------------------------------
         System.out.println("--- Phase 1: System properties ---");
-        System.setProperty("log4j.configuration", "log4j-test.properties");
+        System.setProperty("log4j.configuration", "log4j-testapp.properties");
         System.setProperty("log4j2.configurationFile", "log4j2-test.xml");
         System.setProperty("logback.configurationFile", "logback-test.xml");
 
@@ -68,7 +68,7 @@ public class MultiFrameworkApp {
         // ---------------------------------------------------------------
         System.out.println("\n--- Phase 4: Log4j 1.x ---");
         org.apache.log4j.PropertyConfigurator.configure(
-            MultiFrameworkApp.class.getClassLoader().getResource("log4j-test.properties"));
+            MultiFrameworkApp.class.getClassLoader().getResource("log4j-testapp.properties"));
 
         org.apache.log4j.Logger log4j1Logger =
             org.apache.log4j.Logger.getLogger("com.example.legacy");
