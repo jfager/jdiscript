@@ -32,16 +32,16 @@ public class ThreadMonitor {
     final Map<Long, Long> threadLifetimes = new ConcurrentHashMap<>();
 
     OnVMStart start = se -> {
-        j.threadStartRequest(event -> {
+        j.onThreadStart(event -> {
             long id = event.thread().uniqueID();
             String name = event.thread().name();
             long now = System.currentTimeMillis();
             threadNames.put(id, name);
             threadStartTimes.put(id, now);
             println("Thread started: " + name + " (id=" + id + ")");
-        }).enable();
+        });
 
-        j.threadDeathRequest(event -> {
+        j.onThreadDeath(event -> {
             long id = event.thread().uniqueID();
             String name = event.thread().name();
             long now = System.currentTimeMillis();
@@ -50,7 +50,7 @@ public class ThreadMonitor {
                 threadLifetimes.put(id, now - startTime);
             }
             println("Thread died:    " + name + " (id=" + id + ")");
-        }).enable();
+        });
     };
 
     public static void main(String[] args) {

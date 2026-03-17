@@ -1,7 +1,6 @@
 package org.jdiscript.example;
 
 import static org.jdiscript.util.Utils.println;
-import static org.jdiscript.util.Utils.unchecked;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,11 +63,11 @@ public class MethodTimer {
         String methodName = j.fullName(be.location().method());
         long entryTime = System.nanoTime();
 
-        unchecked(() -> j.onCurrentMethodExit(thread, exit -> {
+        j.onCurrentMethodExitUnchecked(thread, exit -> {
             long elapsed = System.nanoTime() - entryTime;
             stats.computeIfAbsent(methodName, k -> new MethodStats())
                  .record(elapsed);
-        }));
+        });
     };
 
     OnVMStart start = se -> {

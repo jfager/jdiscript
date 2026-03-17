@@ -14,10 +14,8 @@ import org.jdiscript.handlers.OnBreakpoint;
 import org.jdiscript.handlers.OnVMStart;
 import org.jdiscript.util.VMLauncher;
 
-import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
-import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 
 /**
@@ -46,18 +44,7 @@ class StringReporter {
     
     JDIScript j = new JDIScript(new VMLauncher(OPTIONS, MAIN).start());
     BiFunction<Integer, Integer, Integer> add = (v1,v2) -> v1+v2;
-        
-    public Location nearestCaller(String pkg, ThreadReference t) 
-            throws IncompatibleThreadStateException {
-        for(StackFrame f: t.frames()) {
-            Location loc = f.location(); 
-            if(loc.declaringType().name().startsWith(pkg)) {
-                return loc;
-            }
-        }
-        return null;
-    }
-    
+
     class StringStats {
         int counter = 0;
         Map<String, Integer> callers = new HashMap<>();
@@ -68,24 +55,24 @@ class StringReporter {
 
     OnBreakpoint breakpoint; { breakpoint = be -> {
         ThreadReference tref = be.thread();
+        Location pkgCaller = j.nearestCaller("org.jdiscript", tref);
+        if(pkgCaller == null) {
+            return;
+        }
         unchecked(() -> {
-            Location pkgCaller = nearestCaller("org.jdiscript", tref);
-            if(pkgCaller == null) {
-                return;
-            }
             final ObjectReference oref = tref.frame(0).thisObject();
-            //Some String constructors just delegate to another constructor. We don't 
-            //want to count that as two separate instances of the same String, so we 
+            //Some String constructors just delegate to another constructor. We don't
+            //want to count that as two separate instances of the same String, so we
             //check that the ObjectRef's unique id hasn't been seen yet.
             if(seenIds.add(oref.uniqueID())) {
-                //We broke on the String constructor, so the actual contents of 
-                //the String aren't set yet (if we called oref.toString() right now 
-                //we'd just get "").  We defer the stat collecting to the 
-                //constructor's exit so that we'll get the right value.  
+                //We broke on the String constructor, so the actual contents of
+                //the String aren't set yet (if we called oref.toString() right now
+                //we'd just get "").  We defer the stat collecting to the
+                //constructor's exit so that we'll get the right value.
                 //
-                //A more efficient alternative might be to just set the initial 
+                //A more efficient alternative might be to just set the initial
                 //breakpoint on the constructor's exit, but in the case of delegating
-                //constructors, that means the inner constructor would be the one 
+                //constructors, that means the inner constructor would be the one
                 //that 'wins', making the stack trace less informative. Trade-offs.
                 j.onCurrentMethodExit(tref, ee -> {
                     StringStats stats = strings.computeIfAbsent(oref.toString(),
@@ -97,7 +84,7 @@ class StringReporter {
                             1, add);
                     });
                 });
-            } 
+            }
         });
     };}
 

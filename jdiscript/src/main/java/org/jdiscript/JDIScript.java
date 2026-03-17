@@ -879,9 +879,163 @@ public class JDIScript {
      */    
     public void onStepOut(final ThreadReference thread,
     					  final OnStep handler) {
-        onStep(thread, StepRequest.STEP_MIN, StepRequest.STEP_OUT, handler); 
-    }    
-    
+        onStep(thread, StepRequest.STEP_MIN, StepRequest.STEP_OUT, handler);
+    }
+
+    /**
+     * Shortcut for the common pattern of responding to thread start events.
+     * <p>
+     * Builds a {@link ThreadStartRequest} and adds the given handler.
+     *
+     * @param handler    The callback to execute when a thread starts.
+     */
+    public void onThreadStart(final OnThreadStart handler) {
+        threadStartRequest(handler).enable();
+    }
+
+    /**
+     * Shortcut for the common pattern of responding to thread death events.
+     * <p>
+     * Builds a {@link ThreadDeathRequest} and adds the given handler.
+     *
+     * @param handler    The callback to execute when a thread dies.
+     */
+    public void onThreadDeath(final OnThreadDeath handler) {
+        threadDeathRequest(handler).enable();
+    }
+
+    /**
+     * Shortcut for the common pattern of tracking exceptions thrown
+     * by application code.
+     * <p>
+     * Builds an {@link ExceptionRequest} for all exception types with
+     * standard class exclusion filters for {@code java.*}, {@code sun.*},
+     * and {@code jdk.*} packages, so that only exceptions thrown from
+     * application code are reported.
+     *
+     * @param notifyCaught   true to report caught exceptions
+     * @param notifyUncaught true to report uncaught exceptions
+     * @param handler        The callback to execute when an exception is thrown.
+     */
+    public void onException(final boolean notifyCaught,
+                            final boolean notifyUncaught,
+                            final OnException handler) {
+        exceptionRequest(null, notifyCaught, notifyUncaught, handler)
+            .addClassExclusionFilter("java.*")
+            .addClassExclusionFilter("sun.*")
+            .addClassExclusionFilter("jdk.*")
+            .enable();
+    }
+
+    /**
+     * Shortcut for the common pattern of responding to a particular
+     * method's exit.
+     * <p>
+     * Similar to {@link #onMethodInvocation(String, String, OnBreakpoint)},
+     * but uses a {@link MethodExitRequest} filtered by class instead of
+     * breakpoints.  The handler receives a {@link com.sun.jdi.event.MethodExitEvent}
+     * which includes the return value.
+     * <p>
+     * Note that MethodExitRequests can only be filtered by class, not
+     * by individual method.  The handler will be invoked for every method
+     * exit in the matched class; filter by method name in your handler
+     * if needed.
+     *
+     * @param className  A class name suitable for use by
+     *                   {@link MethodExitRequest#addClassFilter(String)}
+     * @param handler    The callback to execute when a method in the class exits.
+     */
+    public void onMethodExit(final String className,
+                             final OnMethodExit handler) {
+        methodExitRequest(handler)
+            .addClassFilter(className)
+            .enable();
+    }
+
+    /**
+     * Like {@link #onCurrentMethodExit(ThreadReference, OnBreakpoint)} but
+     * wraps checked exceptions in a {@link RuntimeException} instead of
+     * declaring them.
+     * <p>
+     * This is the most common usage pattern &mdash; callers almost always
+     * wrap {@code onCurrentMethodExit} in
+     * {@link org.jdiscript.util.Utils#unchecked(org.jdiscript.util.Utils.Block)}.
+     * This method inlines that wrapping for convenience.
+     *
+     * @param thread  The thread currently executing the method.
+     * @param handler The handler for the method exit breakpoint event.
+     * @throws RuntimeException wrapping {@link IncompatibleThreadStateException}
+     *         or {@link AbsentInformationException}
+     */
+    public void onCurrentMethodExitUnchecked(final ThreadReference thread,
+                                             final OnBreakpoint handler) {
+        try {
+            onCurrentMethodExit(thread, handler);
+        } catch(IncompatibleThreadStateException | AbsentInformationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Walk the call stack of the given thread and return the {@link Location}
+     * of the nearest frame whose declaring type starts with the given
+     * package prefix, or {@code null} if no such frame is found.
+     * <p>
+     * This is useful for scoping analysis to application code.  For example,
+     * when breaking on {@code java.lang.String.&lt;init&gt;}, you can call
+     * {@code nearestCaller("com.myapp", thread)} to find which of your
+     * classes triggered the String creation.
+     *
+     * @param packagePrefix  A package prefix (e.g. {@code "com.myapp"}).
+     * @param thread         The suspended thread to inspect.
+     * @return The location of the nearest matching frame, or {@code null}.
+     * @throws RuntimeException wrapping {@link IncompatibleThreadStateException}
+     */
+    public Location nearestCaller(final String packagePrefix,
+                                  final ThreadReference thread) {
+        try {
+            for (StackFrame frame : thread.frames()) {
+                Location loc = frame.location();
+                if (loc.declaringType().name().startsWith(packagePrefix)) {
+                    return loc;
+                }
+            }
+            return null;
+        } catch(IncompatibleThreadStateException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Build a string key representing the full call stack of the given
+     * thread, suitable for use as a {@link java.util.Map} key in
+     * histogram-style profiling.
+     * <p>
+     * The format is {@code "Type.method(line):Type.method(line):..."} from
+     * top of stack to bottom.
+     *
+     * @param thread  The suspended thread to inspect.
+     * @return A colon-separated string of stack frame locations.
+     * @throws RuntimeException wrapping {@link IncompatibleThreadStateException}
+     */
+    public String stacktraceKey(final ThreadReference thread) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            for (StackFrame frame : thread.frames()) {
+                Location loc = frame.location();
+                if (sb.length() > 0) {
+                    sb.append(":");
+                }
+                sb.append(loc.declaringType().name())
+                  .append(".").append(loc.method().name())
+                  .append("(").append(loc.lineNumber()).append(")");
+            }
+            return sb.toString();
+        } catch(IncompatibleThreadStateException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Create a handler that runs the given handler once and then disables
      * the event request that caused the handler to be invoked.

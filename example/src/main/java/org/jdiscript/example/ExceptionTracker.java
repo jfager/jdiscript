@@ -19,7 +19,7 @@ import com.sun.jdi.Location;
  * location, and the catch location (if caught). Produces a summary histogram
  * at the end showing exception frequency by type and throw site.
  *
- * This demonstrates the use of {@code exceptionRequest} to observe both
+ * This demonstrates the use of {@code onException} to observe both
  * caught and uncaught exceptions without modifying the target program.
  */
 public class ExceptionTracker {
@@ -32,7 +32,7 @@ public class ExceptionTracker {
     final Map<String, AtomicLong> exceptionCounts = new HashMap<>();
 
     OnVMStart start = se -> {
-        j.exceptionRequest(null, true, true, event -> {
+        j.onException(true, true, event -> {
             String typeName = event.exception().referenceType().name();
             Location throwLoc = event.location();
             Location catchLoc = event.catchLocation();
@@ -43,10 +43,7 @@ public class ExceptionTracker {
             String key = typeName + " @ " + throwLoc;
             exceptionCounts.computeIfAbsent(key, k -> new AtomicLong(0))
                            .incrementAndGet();
-        }).addClassExclusionFilter("java.*")
-          .addClassExclusionFilter("sun.*")
-          .addClassExclusionFilter("jdk.*")
-          .enable();
+        });
     };
 
     public static void main(String[] args) {

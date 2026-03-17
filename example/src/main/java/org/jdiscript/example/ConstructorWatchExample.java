@@ -2,7 +2,6 @@ package org.jdiscript.example;
 
 import static org.jdiscript.util.Utils.println;
 import static org.jdiscript.util.Utils.repeat;
-import static org.jdiscript.util.Utils.unchecked;
 
 import java.util.Stack;
 import java.util.function.Consumer;
@@ -44,19 +43,19 @@ class ConstructorWatchExample {
                     bpr.addThreadFilter(be.thread());
                     bpr.enable();
                 });
-        
+
             //Make sure that when we leave the interesting method call, we turn
             //all of the constructor breakpoints back off.
-            unchecked(() -> j.onCurrentMethodExit(be.thread(), e -> {
+            j.onCurrentMethodExitUnchecked(be.thread(), e -> {
                 stack.pop();
-                if(stack.size() == 0) { 
+                if(stack.size() == 0) {
                     j.breakpointRequests(breakpoint).forEach(bp ->
                         bp.setEnabled(bp.location().declaringType().name().startsWith("org.jdiscript"))
                     );
                 }
-            }));
+            });
         } else {
-            unchecked(() -> j.onCurrentMethodExit(be.thread(), e -> stack.pop()));
+            j.onCurrentMethodExitUnchecked(be.thread(), e -> stack.pop());
         }
     };}
 
