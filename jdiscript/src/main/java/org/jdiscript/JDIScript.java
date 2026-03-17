@@ -3,6 +3,7 @@ package org.jdiscript;
 import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.jdiscript.events.DebugEventDispatcher;
@@ -783,9 +784,12 @@ public class JDIScript {
                                    final String methodName,
                                    final OnBreakpoint handler) {
         onClassPrep(className, ev -> {
-            ev.referenceType().methodsByName(methodName).forEach(m -> 
-                breakpointRequest(m.location(), handler).enable()
-            );
+            ev.referenceType().methodsByName(methodName).forEach(m -> {
+                // Abstract and native methods have no location
+                if (m.location() != null) {
+                    breakpointRequest(m.location(), handler).enable();
+                }
+            });
         });
     }
 
@@ -810,10 +814,12 @@ public class JDIScript {
                                    final String methodName,
                                    final String methodSig,
                                    final OnBreakpoint handler) {
-        onClassPrep(className, ev -> { 
-            ev.referenceType().methodsByName(methodName, methodSig).forEach(m ->
-                breakpointRequest(m.location(), handler).enable()
-            );
+        onClassPrep(className, ev -> {
+            ev.referenceType().methodsByName(methodName, methodSig).forEach(m -> {
+                if (m.location() != null) {
+                    breakpointRequest(m.location(), handler).enable();
+                }
+            });
         });
     }
     
@@ -993,10 +999,36 @@ public class JDIScript {
      */
     public Location nearestCaller(final String packagePrefix,
                                   final ThreadReference thread) {
+        return nearestCaller(
+            loc -> loc.declaringType().name().startsWith(packagePrefix),
+            thread);
+    }
+
+    /**
+     * Walk the call stack of the given thread and return the {@link Location}
+     * of the nearest frame (starting from frame 1, skipping the current frame)
+     * that matches the given predicate, or {@code null} if none matches.
+     * <p>
+     * This generalizes {@link #nearestCaller(String, ThreadReference)} to
+     * support arbitrary filtering.  Common uses include exclusion-based
+     * filtering to skip framework internals:
+     * <pre>
+     *   nearestCaller(loc -&gt; !loc.declaringType().name().startsWith("java."),
+     *                 thread)
+     * </pre>
+     *
+     * @param filter  A predicate that returns {@code true} for matching frames.
+     * @param thread  The suspended thread to inspect.
+     * @return The location of the nearest matching frame, or {@code null}.
+     * @throws RuntimeException wrapping {@link IncompatibleThreadStateException}
+     */
+    public Location nearestCaller(final Predicate<Location> filter,
+                                  final ThreadReference thread) {
         try {
-            for (StackFrame frame : thread.frames()) {
-                Location loc = frame.location();
-                if (loc.declaringType().name().startsWith(packagePrefix)) {
+            List<StackFrame> frames = thread.frames();
+            for (int i = 1; i < frames.size(); i++) {
+                Location loc = frames.get(i).location();
+                if (filter.test(loc)) {
                     return loc;
                 }
             }

@@ -5,7 +5,6 @@ import static org.jdiscript.util.Utils.unchecked;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,14 +13,12 @@ import org.jdiscript.JDIScript;
 import org.jdiscript.handlers.OnBreakpoint;
 import org.jdiscript.handlers.OnVMDeath;
 import org.jdiscript.handlers.OnVMDisconnect;
+import org.jdiscript.util.RemoteObject;
 import org.jdiscript.util.VMSocketAttacher;
 
-import com.sun.jdi.ClassType;
 import com.sun.jdi.IncompatibleThreadStateException;
-import com.sun.jdi.InterfaceType;
-import com.sun.jdi.Method;
+import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
-import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.StringReference;
 import com.sun.jdi.ThreadReference;
@@ -145,132 +142,44 @@ public class LogConfigDebugger {
     // ------------------------------------------------------------------
 
     private String callerLocation(ThreadReference thread) {
-        try {
-            List<StackFrame> frames = thread.frames();
-            for (int i = 1; i < frames.size() && i < 30; i++) {
-                String loc = frames.get(i).location().toString();
-                if (!isFrameworkOrJdkInternal(loc)) {
-                    return loc;
-                }
-            }
-            // If everything is framework/JDK, return the immediate caller
-            if (frames.size() > 1) {
-                return frames.get(1).location().toString();
-            }
-        } catch (IncompatibleThreadStateException e) {
-            // thread not suspended
-        }
-        return null;
+        if (thread == null) return null;
+        Location loc = j.nearestCaller(
+            l -> !isFrameworkOrJdkInternal(l.declaringType().name()), thread);
+        return loc != null ? loc.toString() : null;
     }
 
-    private static boolean isFrameworkOrJdkInternal(String location) {
-        return location.startsWith("org.apache.log4j.")
-            || location.startsWith("org.apache.logging.log4j.")
-            || location.startsWith("org.slf4j.")
-            || location.startsWith("ch.qos.logback.")
-            || location.startsWith("java.util.logging.")
-            || location.startsWith("java.lang.")
-            || location.startsWith("java.security.")
-            || location.startsWith("java.io.")
-            || location.startsWith("java.net.")
-            || location.startsWith("java.util.")
-            || location.startsWith("jdk.")
-            || location.startsWith("sun.")
-            || location.startsWith("com.sun.");
+    private static boolean isFrameworkOrJdkInternal(String className) {
+        return className.startsWith("org.apache.log4j.")
+            || className.startsWith("org.apache.logging.log4j.")
+            || className.startsWith("org.slf4j.")
+            || className.startsWith("ch.qos.logback.")
+            || className.startsWith("java.util.logging.")
+            || className.startsWith("java.lang.")
+            || className.startsWith("java.security.")
+            || className.startsWith("java.io.")
+            || className.startsWith("java.net.")
+            || className.startsWith("java.util.")
+            || className.startsWith("jdk.")
+            || className.startsWith("sun.")
+            || className.startsWith("com.sun.");
     }
 
     // ------------------------------------------------------------------
-    // Value extraction helpers — uses remote toString() for readable output
+    // Value extraction helpers — delegates to upstream RemoteObject
     // ------------------------------------------------------------------
-
-    /** Invoke toString() on a remote object to get its actual value. */
-    private static String remoteToString(ObjectReference obj, ThreadReference thread) {
-        try {
-            ReferenceType type = obj.referenceType();
-            // Find toString() — walk up the hierarchy
-            Method toStringMethod = null;
-            if (type instanceof ClassType ct) {
-                toStringMethod = ct.concreteMethodByName("toString", "()Ljava/lang/String;");
-            } else if (type instanceof InterfaceType) {
-                // Fall back to looking on Object
-                for (ReferenceType rt : obj.virtualMachine().classesByName("java.lang.Object")) {
-                    if (rt instanceof ClassType objType) {
-                        toStringMethod = objType.concreteMethodByName("toString", "()Ljava/lang/String;");
-                        break;
-                    }
-                }
-            }
-            if (toStringMethod != null) {
-                Value result = obj.invokeMethod(
-                    thread, toStringMethod, Collections.emptyList(),
-                    ObjectReference.INVOKE_SINGLE_THREADED);
-                if (result instanceof StringReference sr) {
-                    return sr.value();
-                }
-            }
-        } catch (Exception e) {
-            // Fall back to type@id
-        }
-        return obj.type().name() + "@" + obj.uniqueID();
-    }
-
-    /** Read first argument, using remote toString() for objects. */
-    private static String firstArgReadable(ThreadReference thread) {
-        return argReadable(thread, 0);
-    }
-
-    /** Read argument at position, using remote toString() for objects. */
-    private static String argReadable(ThreadReference thread, int index) {
-        try {
-            StackFrame frame = thread.frame(0);
-            List<Value> args = frame.getArgumentValues();
-            if (args.size() > index) {
-                return valueReadable(args.get(index), thread);
-            }
-        } catch (IncompatibleThreadStateException e) {
-            // fall through
-        }
-        return "<unknown>";
-    }
 
     /** Read 'this' object's name via a getName() call. */
     private static String thisName(ThreadReference thread) {
-        try {
-            ObjectReference thisObj = thread.frame(0).thisObject();
-            if (thisObj == null) return "<root>";
-            return invokeGetName(thisObj, thread);
-        } catch (IncompatibleThreadStateException e) {
-            return "<unknown>";
-        }
-    }
-
-    /** Invoke getName() on a remote object if available. */
-    private static String invokeGetName(ObjectReference obj, ThreadReference thread) {
-        try {
-            ReferenceType type = obj.referenceType();
-            if (type instanceof ClassType ct) {
-                Method getName = ct.concreteMethodByName("getName", "()Ljava/lang/String;");
-                if (getName != null) {
-                    Value result = obj.invokeMethod(
-                        thread, getName, Collections.emptyList(),
-                        ObjectReference.INVOKE_SINGLE_THREADED);
-                    if (result instanceof StringReference sr) {
-                        String name = sr.value();
-                        return (name == null || name.isEmpty()) ? "<root>" : name;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // fall through
-        }
-        return remoteToString(obj, thread);
-    }
-
-    private static String valueReadable(Value v, ThreadReference thread) {
-        if (v == null) return "null";
-        if (v instanceof StringReference sr) return sr.value();
-        if (v instanceof ObjectReference obj) return remoteToString(obj, thread);
-        return v.toString();
+        ObjectReference thisObj = RemoteObject.thisObject(thread);
+        if (thisObj == null) return "<root>";
+        return RemoteObject.invokeRemote(thisObj, "getName",
+                "()Ljava/lang/String;", thread)
+            .filter(v -> v instanceof StringReference)
+            .map(v -> {
+                String name = ((StringReference) v).value();
+                return (name == null || name.isEmpty()) ? "<root>" : name;
+            })
+            .orElseGet(() -> RemoteObject.remoteToString(thisObj, thread));
     }
 
     /** Read first argument as a raw String (no remote invoke, for hot paths). */
@@ -315,7 +224,7 @@ public class LogConfigDebugger {
             cp.referenceType().methodsByName("doConfigure").forEach(m -> {
                 if (m.argumentTypeNames().size() >= 1) {
                     j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
-                        String configSource = firstArgReadable(e.thread());
+                        String configSource = RemoteObject.argToString(e.thread(), 0);
                         record("LOG4J1-CONFIG", "PropertyConfigurator.doConfigure(" + configSource + ")", e.thread());
                     }).enable();
                 }
@@ -326,7 +235,7 @@ public class LogConfigDebugger {
         j.onClassPrep("org.apache.log4j.xml.DOMConfigurator", cp -> {
             cp.referenceType().methodsByName("doConfigure").forEach(m -> {
                 j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
-                    String configSource = firstArgReadable(e.thread());
+                    String configSource = RemoteObject.argToString(e.thread(), 0);
                     record("LOG4J1-CONFIG", "DOMConfigurator.doConfigure(" + configSource + ")", e.thread());
                 }).enable();
             });
@@ -337,7 +246,7 @@ public class LogConfigDebugger {
             cp.referenceType().methodsByName("setLevel").forEach(m -> {
                 j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
                     String loggerName = thisName(e.thread());
-                    String level = firstArgReadable(e.thread());
+                    String level = RemoteObject.argToString(e.thread(), 0);
                     record("LOG4J1-LEVEL", loggerName + " -> " + level, e.thread());
                     effectiveLoggers.put(loggerName, level);
                 }).enable();
@@ -347,7 +256,7 @@ public class LogConfigDebugger {
             cp.referenceType().methodsByName("setPriority").forEach(m -> {
                 j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
                     String loggerName = thisName(e.thread());
-                    String level = firstArgReadable(e.thread());
+                    String level = RemoteObject.argToString(e.thread(), 0);
                     record("LOG4J1-LEVEL", loggerName + " -> " + level + " (setPriority)", e.thread());
                 }).enable();
             });
@@ -386,7 +295,7 @@ public class LogConfigDebugger {
                         unchecked(() -> {
                             ObjectReference configObj = e.thread().frame(0).thisObject();
                             String configName = configObj != null
-                                ? remoteToString(configObj, e.thread()) : "<unknown>";
+                                ? RemoteObject.remoteToString(configObj, e.thread()) : "<unknown>";
                             record("LOG4J2-CONFIG", "Configuration started: " + configName, e.thread());
                         });
                     }).enable();
@@ -400,7 +309,7 @@ public class LogConfigDebugger {
                 if (m.location() != null) {
                     j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
                         String loggerName = thisName(e.thread());
-                        String level = firstArgReadable(e.thread());
+                        String level = RemoteObject.argToString(e.thread(), 0);
                         record("LOG4J2-LEVEL", loggerName + " -> " + level, e.thread());
                         effectiveLoggers.put(loggerName, level);
                     }).enable();
@@ -414,7 +323,7 @@ public class LogConfigDebugger {
                 if (m.location() != null) {
                     j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
                         String loggerName = firstArgAsString(e.thread());
-                        String level = argReadable(e.thread(), 1);
+                        String level = RemoteObject.argToString(e.thread(), 1);
                         record("LOG4J2-LEVEL", "Configurator.setLevel(" + loggerName + ", " + level + ")", e.thread());
                     }).enable();
                 }
@@ -472,7 +381,7 @@ public class LogConfigDebugger {
             // configureByResource — which file was chosen
             cp.referenceType().methodsByName("configureByResource").forEach(m -> {
                 j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
-                    String resource = firstArgReadable(e.thread());
+                    String resource = RemoteObject.argToString(e.thread(), 0);
                     record("LOGBACK-CONFIG", "configureByResource(" + resource + ")", e.thread());
                 }).enable();
             });
@@ -483,7 +392,7 @@ public class LogConfigDebugger {
             cp.referenceType().methodsByName("setLevel").forEach(m -> {
                 j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
                     String loggerName = thisName(e.thread());
-                    String level = firstArgReadable(e.thread());
+                    String level = RemoteObject.argToString(e.thread(), 0);
                     record("LOGBACK-LEVEL", loggerName + " -> " + level, e.thread());
                     effectiveLoggers.put(loggerName, level);
                 }).enable();
@@ -518,7 +427,7 @@ public class LogConfigDebugger {
             cp.referenceType().methodsByName("setLevel").forEach(m -> {
                 j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
                     String loggerName = thisName(e.thread());
-                    String level = firstArgReadable(e.thread());
+                    String level = RemoteObject.argToString(e.thread(), 0);
                     record("JUL-LEVEL", loggerName + " -> " + level, e.thread());
                     effectiveLoggers.put(loggerName, level);
                 }).enable();
@@ -534,7 +443,7 @@ public class LogConfigDebugger {
                 j.breakpointRequest(m.location(), (OnBreakpoint) e -> {
                     String key = firstArgAsString(e.thread());
                     if (key != null && isLoggingProperty(key)) {
-                        String value = argReadable(e.thread(), 1);
+                        String value = RemoteObject.argToString(e.thread(), 1);
                         record("SYS-PROPERTY", "System.setProperty(\"" + key + "\", \"" + value + "\")", e.thread());
                     }
                 }).enable();
