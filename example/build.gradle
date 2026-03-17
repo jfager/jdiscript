@@ -1,4 +1,3 @@
 dependencies {
-    compile project(':jdiscript')
+    implementation project(':jdiscript')
 }
-
