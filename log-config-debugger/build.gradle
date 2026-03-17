@@ -1,3 +1,23 @@
+sourceSets {
+    // Separate source set for test applications that exercise the debugger.
+    // Keeps test apps and their config files out of the main jar.
+    testapp {
+        java {
+            srcDir 'src/testapp/java'
+        }
+        resources {
+            srcDir 'src/testapp/resources'
+        }
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    testappImplementation.extendsFrom implementation
+    testappRuntimeOnly.extendsFrom runtimeOnly
+}
+
 dependencies {
     implementation project(':jdiscript')
 
@@ -16,4 +36,35 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.16'
     implementation 'ch.qos.logback:logback-classic:1.5.16'
     implementation 'ch.qos.logback:logback-core:1.5.16'
+}
+
+// ---------------------------------------------------------------------------
+// JavaExec tasks for each test app.
+//
+// To debug with LogConfigDebugger, add -Pdebug to the command line:
+//   ./gradlew :log-config-debugger:runLog4j1App -Pdebug
+//
+// This starts the app with JDWP suspend=y on port 5005, so you can
+// attach LogConfigDebugger before it proceeds.
+// ---------------------------------------------------------------------------
+
+def testApps = [
+    'Log4j1App'         : 'org.jdiscript.example.testapp.Log4j1App',
+    'Log4j2App'         : 'org.jdiscript.example.testapp.Log4j2App',
+    'LogbackApp'        : 'org.jdiscript.example.testapp.LogbackApp',
+    'JULApp'            : 'org.jdiscript.example.testapp.JULApp',
+    'MultiFrameworkApp' : 'org.jdiscript.example.testapp.MultiFrameworkApp',
+]
+
+testApps.each { taskSuffix, mainCls ->
+    tasks.register("run${taskSuffix}", JavaExec) {
+        description = "Run ${taskSuffix} test application"
+        group = 'application'
+        classpath = sourceSets.testapp.runtimeClasspath
+        mainClass = mainCls
+
+        if (project.hasProperty('debug')) {
+            jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
+        }
+    }
 }

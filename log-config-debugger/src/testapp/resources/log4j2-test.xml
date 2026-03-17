@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Log4j 2.x test configuration -->
+<!-- Used by Log4j2App and MultiFrameworkApp -->
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ISO8601} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.example.data" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="com.example.modern" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
