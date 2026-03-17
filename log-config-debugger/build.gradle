@@ -1,0 +1,19 @@
+dependencies {
+    implementation project(':jdiscript')
+
+    // Logging frameworks — needed only so we can build a test app that
+    // exercises multiple logging stacks.  These stay isolated in this
+    // module and don't leak into :jdiscript or :example.
+
+    // Log4j 1.x
+    implementation 'log4j:log4j:1.2.17'
+
+    // Log4j 2.x
+    implementation 'org.apache.logging.log4j:log4j-core:2.24.3'
+    implementation 'org.apache.logging.log4j:log4j-api:2.24.3'
+
+    // SLF4J + Logback
+    implementation 'org.slf4j:slf4j-api:2.0.16'
+    implementation 'ch.qos.logback:logback-classic:1.5.16'
+    implementation 'ch.qos.logback:logback-core:1.5.16'
+}
