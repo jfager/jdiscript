@@ -190,7 +190,7 @@ public class JDIScript {
         try {
             eventThread.join(millis);
         } catch(InterruptedException exc) {
-            //TODO: handle this?
+            Thread.currentThread().interrupt();
         }
 
     }
@@ -667,17 +667,18 @@ public class JDIScript {
      * Shortcut for the common pattern of decorating any class
      * on preparation.
      * <p>
-     * Builds a {@link ClassPrepareRequest}, and adds the given 
+     * Builds a {@link ClassPrepareRequest}, and adds the given
      * {@link OnClassPrepare} handler.
-     * <p>
-     * TODO: what should this return?
      *
      * @param handler    The callback to execute when the class is prepped.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can
+     *         be used to disable or delete the request later.
      */
-    public void onClassPrep(final OnClassPrepare handler) {
-        classPrepareRequest()
-            .addHandler(handler)
-            .enable();
+    public ChainingClassPrepareRequest onClassPrep(final OnClassPrepare handler) {
+        ChainingClassPrepareRequest request = classPrepareRequest()
+            .addHandler(handler);
+        request.enable();
+        return request;
     }
 
     /**
@@ -686,19 +687,20 @@ public class JDIScript {
      * <p>
      * Builds a {@link ClassPrepareRequest}, filters it for the given
      * class name, and adds the given {@link OnClassPrepare} handler.
-     * <p>
-     * TODO: what should this return?
      *
      * @param className  A class name suitable for use by
      *                   {@link ClassPrepareRequest#addClassFilter(String)}
      * @param handler    The callback to execute when the class is prepped.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can
+     *         be used to disable or delete the request later.
      */
-    public void onClassPrep(final String className,
+    public ChainingClassPrepareRequest onClassPrep(final String className,
                             final OnClassPrepare handler) {
-        classPrepareRequest()
+        ChainingClassPrepareRequest request = classPrepareRequest()
             .addClassFilter(className)
-            .addHandler(handler)
-            .enable();
+            .addHandler(handler);
+        request.enable();
+        return request;
     }
 
     /**
@@ -708,8 +710,6 @@ public class JDIScript {
      * class name, and adds an {@link OnClassPrepare} handler that
      * creates an {@link AccessWatchpointRequest} for the given field name.
      * Any field accesses are in turn handled by the given handler.
-     * <p>
-     * TODO: what should this return?
      *
      * @param className  A class name suitable for use by
      *                   {@link ClassPrepareRequest#addClassFilter(String)}
@@ -717,11 +717,13 @@ public class JDIScript {
      *                   {@link ReferenceType#fieldByName(String)}.  Must be
      *                   a field belonging to all classes matched by className.
      * @param handler    The callback to execute when the field is accessed.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can
+     *         be used to disable or delete the request later.
      */
-    public void onFieldAccess(final String className,
+    public ChainingClassPrepareRequest onFieldAccess(final String className,
                               final String fieldName,
                               final OnAccessWatchpoint handler) {
-        onClassPrep(className, ev -> { 
+        return onClassPrep(className, ev -> {
             Field field = ev.referenceType().fieldByName(fieldName);
             accessWatchpointRequest(field, handler).enable();
         });
@@ -734,8 +736,6 @@ public class JDIScript {
      * class name, and adds an {@link OnClassPrepare} handler that
      * creates a {@link ModificationWatchpointRequest} for the given field name.
      * Any field modifications are in turn handled by the given handler.
-     * <p>
-     * TODO: what should this return?
      *
      * @param className  A class name suitable for use by
      *                   {@link ClassPrepareRequest#addClassFilter(String)}
@@ -743,11 +743,13 @@ public class JDIScript {
      *                   {@link ReferenceType#fieldByName(String)}.  Must be
      *                   a field belonging to all classes matched by className.
      * @param handler    The callback to execute when the field is modified.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can
+     *         be used to disable or delete the request later.
      */
-    public void onFieldModification(final String className,
+    public ChainingClassPrepareRequest onFieldModification(final String className,
                                     final String fieldName,
                                     final OnModificationWatchpoint handler) {
-        onClassPrep(className, ev -> { 
+        return onClassPrep(className, ev -> {
             Field field = ev.referenceType().fieldByName(fieldName);
             modificationWatchpointRequest(field, handler).enable();
         });
@@ -770,8 +772,6 @@ public class JDIScript {
      * all matching methods will have a breakpoint set and be handled by
      * the given handler.  For greater control, use
      * {@link #onMethodInvocation(String, String, String, OnBreakpoint)}
-     * <p>
-     * TODO: what should this return?  A future for the BreakpointRequest?
      *
      * @param className  A class name suitable for use by
      *                   {@link ClassPrepareRequest#addClassFilter(String)}
@@ -779,11 +779,13 @@ public class JDIScript {
      *                   {@link ReferenceType#methodsByName(String)}.  Must be
      *                   a method belonging to all classes matched by className.
      * @param handler    The callback to execute when the method is invoked.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can
+     *         be used to disable or delete the request later.
      */
-    public void onMethodInvocation(final String className,
+    public ChainingClassPrepareRequest onMethodInvocation(final String className,
                                    final String methodName,
                                    final OnBreakpoint handler) {
-        onClassPrep(className, ev -> {
+        return onClassPrep(className, ev -> {
             ev.referenceType().methodsByName(methodName).forEach(m -> {
                 // Abstract and native methods have no location
                 if (m.location() != null) {
@@ -796,8 +798,6 @@ public class JDIScript {
     /**
      * Identical to {@link #onMethodInvocation(String, String, OnBreakpoint)},
      * extending filtering to include a method signature.
-     * <p>
-     * TODO: what should this return?  A future for the BreakpointRequest?
      *
      * @param className  A class name suitable for use by
      *                   {@link ClassPrepareRequest#addClassFilter(String)}
@@ -809,12 +809,14 @@ public class JDIScript {
      *                   Must be a method belonging to all classes matched by
      *                   className.
      * @param handler    The callback to execute when the method is invoked.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can
+     *         be used to disable or delete the request later.
      */
-    public void onMethodInvocation(final String className,
+    public ChainingClassPrepareRequest onMethodInvocation(final String className,
                                    final String methodName,
                                    final String methodSig,
                                    final OnBreakpoint handler) {
-        onClassPrep(className, ev -> {
+        return onClassPrep(className, ev -> {
             ev.referenceType().methodsByName(methodName, methodSig).forEach(m -> {
                 if (m.location() != null) {
                     breakpointRequest(m.location(), handler).enable();
