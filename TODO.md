@@ -1,19 +1,5 @@
 # Future Improvements
 
-## Integrate the Code Generator into the Build
-
-The `generator` subproject produces the `ChainingXxxRequest` wrapper classes in
-`jdiscript/src/main/java/org/jdiscript/requests/`, but it's run manually. The
-generated classes are checked into version control and can drift out of sync
-with the JDI API.
-
-Improvements:
-- Add a Gradle task that runs `ChainingRequestGenerator.main()` and outputs to
-  a generated-sources directory.
-- Wire that task as a dependency of `:jdiscript:compileJava`.
-- Fix the generator's parameter name resolution (currently produces `arg0`,
-  `arg1` placeholders in javadoc).
-
 ## Add CI/CD
 
 No GitHub Actions workflow exists. A minimal CI pipeline should:

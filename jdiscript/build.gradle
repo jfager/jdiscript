@@ -14,10 +14,38 @@ if (JavaVersion.current().isJava9Compatible()) {
     }
 }
 
+// --- Code generation for ChainingXxxRequest wrapper classes ---
+
+def generatedSrcDir = layout.buildDirectory.dir('generated/sources/chainingRequests/java')
+
+configurations {
+    generator
+}
+
 dependencies {
+    generator project(':generator')
+
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testImplementation 'org.mockito:mockito-core:5.14.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.register('generateChainingRequests', JavaExec) {
+    description = 'Generate ChainingXxxRequest wrapper classes from JDI request interfaces'
+    group = 'code generation'
+
+    classpath = configurations.generator
+    mainClass = 'org.jdiscript.generator.ChainingRequestGenerator'
+    args = [generatedSrcDir.get().asFile.absolutePath]
+    jvmArgs = ['--add-modules', 'jdk.jdi']
+
+    outputs.dir(generatedSrcDir)
+}
+
+sourceSets.main.java.srcDir(generatedSrcDir)
+tasks.named('compileJava') { dependsOn('generateChainingRequests') }
+afterEvaluate {
+    tasks.named('sourcesJar') { dependsOn('generateChainingRequests') }
 }
 
 test {

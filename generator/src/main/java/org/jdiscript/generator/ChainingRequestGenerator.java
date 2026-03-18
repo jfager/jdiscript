@@ -33,7 +33,11 @@ public class ChainingRequestGenerator {
     static final String WRAPPED = "wrapped";
     static final String HANDLER = "handler";
 
-    static final File OUT_DIR = new File("./generator/src/generated/java");
+    private final File outDir;
+
+    ChainingRequestGenerator(File outDir) {
+        this.outDir = outDir;
+    }
 
     void run() throws IOException {
         try (ScanResult scanResult = scanForJDIRequests()) {
@@ -41,7 +45,7 @@ public class ChainingRequestGenerator {
             for (ClassInfo classInfo : scanResult.getAllInterfaces()) {
                 if (!classInfo.equals(eventRequestInfo) && classInfo.getInterfaces().contains(eventRequestInfo)) {
                     TypeSpec chainingRequestSpec = buildChainingRequest(classInfo.loadClass());
-                    writeTypeSpecToDirectory(OUT_DIR, chainingRequestSpec);
+                    writeTypeSpecToDirectory(outDir, chainingRequestSpec);
                 }
             }
         }
@@ -131,7 +135,10 @@ public class ChainingRequestGenerator {
     }
 
     public static void main(String[] args) {
-        ChainingRequestGenerator generator = new ChainingRequestGenerator();
+        File outDir = args.length > 0
+            ? new File(args[0])
+            : new File("./generator/src/generated/java");
+        ChainingRequestGenerator generator = new ChainingRequestGenerator(outDir);
         try {
             generator.run();
         } catch (IOException e) {
