@@ -26,6 +26,7 @@ import org.jdiscript.handlers.OnThreadDeath;
 import org.jdiscript.handlers.OnThreadStart;
 import org.jdiscript.handlers.OnVMDeath;
 import org.jdiscript.handlers.Once;
+import org.jdiscript.handlers.Sampled;
 import org.jdiscript.requests.ChainingAccessWatchpointRequest;
 import org.jdiscript.requests.ChainingBreakpointRequest;
 import org.jdiscript.requests.ChainingClassPrepareRequest;
@@ -824,6 +825,83 @@ public class JDIScript {
             });
         });
     }
+
+    /**
+     * Like {@link #onMethodInvocation(String, String, OnBreakpoint)} but with
+     * an explicit suspend policy.
+     * <p>
+     * The default policy is {@link EventRequest#SUSPEND_ALL}, which stops every
+     * thread on each hit — appropriate for cold paths but expensive on hot ones.
+     * Pass {@link EventRequest#SUSPEND_NONE} to deliver events asynchronously
+     * without pausing the target (ideal for counters and fire-and-forget logging)
+     * or {@link EventRequest#SUSPEND_EVENT_THREAD} to pause only the hitting
+     * thread (better for heterogeneous multi-threaded servers).
+     * <p>
+     * Example — count calls without pausing the target:
+     * <pre>
+     *   LongAdder counter = new LongAdder();
+     *   j.onMethodInvocation("com.example.MyClass", "handleRequest",
+     *       EventRequest.SUSPEND_NONE, e -&gt; counter.increment());
+     * </pre>
+     *
+     * @param className     A class name suitable for use by
+     *                      {@link ClassPrepareRequest#addClassFilter(String)}
+     * @param methodName    A method name suitable for use by
+     *                      {@link ReferenceType#methodsByName(String)}.
+     * @param suspendPolicy One of {@link EventRequest#SUSPEND_ALL},
+     *                      {@link EventRequest#SUSPEND_EVENT_THREAD}, or
+     *                      {@link EventRequest#SUSPEND_NONE}.
+     * @param handler       The callback to execute when the method is invoked.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can
+     *         be used to disable or delete the request later.
+     */
+    public ChainingClassPrepareRequest onMethodInvocation(final String className,
+                                   final String methodName,
+                                   final int suspendPolicy,
+                                   final OnBreakpoint handler) {
+        return onClassPrep(className, ev -> {
+            ev.referenceType().methodsByName(methodName).forEach(m -> {
+                if (m.location() != null) {
+                    breakpointRequest(m.location(), handler)
+                        .setSuspendPolicy(suspendPolicy)
+                        .enable();
+                }
+            });
+        });
+    }
+
+    /**
+     * Like {@link #onMethodInvocation(String, String, String, OnBreakpoint)} but
+     * with an explicit suspend policy.
+     *
+     * @param className     A class name suitable for use by
+     *                      {@link ClassPrepareRequest#addClassFilter(String)}
+     * @param methodName    A method name suitable for use by
+     *                      {@link ReferenceType#methodsByName(String)}.
+     * @param methodSig     A method signature suitable for use by
+     *                      {@link ReferenceType#methodsByName(String, String)}.
+     * @param suspendPolicy One of {@link EventRequest#SUSPEND_ALL},
+     *                      {@link EventRequest#SUSPEND_EVENT_THREAD}, or
+     *                      {@link EventRequest#SUSPEND_NONE}.
+     * @param handler       The callback to execute when the method is invoked.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can
+     *         be used to disable or delete the request later.
+     */
+    public ChainingClassPrepareRequest onMethodInvocation(final String className,
+                                   final String methodName,
+                                   final String methodSig,
+                                   final int suspendPolicy,
+                                   final OnBreakpoint handler) {
+        return onClassPrep(className, ev -> {
+            ev.referenceType().methodsByName(methodName, methodSig).forEach(m -> {
+                if (m.location() != null) {
+                    breakpointRequest(m.location(), handler)
+                        .setSuspendPolicy(suspendPolicy)
+                        .enable();
+                }
+            });
+        });
+    }
     
     /**
      * Creates a breakpointRequest for the exit from the currently executing method 
@@ -1073,7 +1151,7 @@ public class JDIScript {
     /**
      * Create a handler that runs the given handler once and then disables
      * the event request that caused the handler to be invoked.
-     * 
+     *
      * @param <K> The type of the inner handler
      * @param handler  The inner handler
      * @return An instance of {@link Once} cast to the same type as the inner handler.
@@ -1081,6 +1159,32 @@ public class JDIScript {
     @SuppressWarnings("unchecked")
     public <K extends DebugEventHandler> K once(K handler) {
     	return (K)new Once(handler);
+    }
+
+    /**
+     * Create a handler that fires the inner handler, then disables the
+     * triggering event request and re-enables it after {@code intervalMs}
+     * milliseconds.
+     * <p>
+     * This caps the event rate at roughly {@code 1000 / intervalMs} hits per
+     * second regardless of how hot the target method is, retaining most of the
+     * target's throughput while still delivering periodic samples.  A 100 ms
+     * interval gives ~97.5% throughput even for a tight-loop breakpoint.
+     * <p>
+     * Example:
+     * <pre>
+     *   j.onMethodInvocation("com.example.MyClass", "hotMethod",
+     *       j.sampled(100, e -&gt; System.out.println("sampled: " + e.location())));
+     * </pre>
+     *
+     * @param <K>        The type of the inner handler.
+     * @param intervalMs How long to suppress the request after each hit (ms).
+     * @param handler    The inner handler to invoke on each sampled hit.
+     * @return A {@link Sampled} wrapper cast to the same type as the inner handler.
+     */
+    @SuppressWarnings("unchecked")
+    public <K extends DebugEventHandler> K sampled(long intervalMs, K handler) {
+        return (K) new Sampled(handler, intervalMs);
     }
     
     public String fullName(Method method) {
