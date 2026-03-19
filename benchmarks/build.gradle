@@ -1,0 +1,26 @@
+plugins {
+    id 'application'
+}
+
+// Separate source set for the target application that gets debugged.
+// Keeps it isolated from the benchmark runner (which uses JDI).
+sourceSets {
+    targetapp {
+        java { srcDir 'src/targetapp/java' }
+    }
+}
+
+dependencies {
+    implementation project(':jdiscript')
+}
+
+application {
+    mainClass = 'org.jdiscript.benchmark.BenchmarkRunner'
+    applicationDefaultJvmArgs = ['--add-modules', 'jdk.jdi']
+}
+
+// Ensure the target app is compiled before the runner starts,
+// since the runner launches it as a subprocess.
+tasks.named('run') {
+    dependsOn 'compileTargetappJava'
+}
