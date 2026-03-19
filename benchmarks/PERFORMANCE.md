@@ -8,31 +8,59 @@ measurement window.  The reported figure is the median over three runs.
 
 ---
 
-## Results
+## Worst-case results (hot path, every call traced, SUSPEND_ALL)
 
 ### Tight-loop workload — `doWork()` calls per 5 s
 
 | Scenario | ops (median) | vs baseline |
 |---|---:|---:|
-| Baseline — no JDWP | 175,413,759 | 100.0% |
-| JDWP agent loaded, `suspend=n`, no attach | 174,465,949 | 99.5% |
-| JDI connected, zero event requests | 175,359,015 | 100.0% |
-| Breakpoint on `doWork()` — fires every iteration | 22,964 | 0.013% |
-| `MethodEntryRequest` — class filter to `TargetApp` | 20,650 | 0.012% |
+| Baseline — no JDWP | 174,534,425 | 100.0% |
+| JDWP agent loaded, `suspend=n`, no attach | 176,060,497 | 100.9% |
+| JDI connected, zero event requests | 174,806,052 | 100.2% |
+| Breakpoint on `doWork()` — fires every iteration | 23,161 | 0.013% |
+| `MethodEntryRequest` — class filter to `TargetApp` | 22,294 | 0.013% |
 
 ### Thread-spawn workload — threads created per 5 s
 
 | Scenario | ops (median) | vs baseline |
 |---|---:|---:|
-| Baseline — no JDWP | 32,611 | 100.0% |
-| `ThreadStartRequest` — SUSPEND_ALL | 3,048 | 9.3% |
+| Baseline — no JDWP | 32,798 | 100.0% |
+| `ThreadStartRequest` — SUSPEND_ALL | 3,142 | 9.6% |
 
 ### Exception workload — throw+catch cycles per 5 s
 
 | Scenario | ops (median) | vs baseline |
 |---|---:|---:|
-| Baseline — no JDWP | 7,329,480 | 100.0% |
-| `ExceptionRequest` — caught, class filter | 3,499 | 0.048% |
+| Baseline — no JDWP | 7,152,886 | 100.0% |
+| `ExceptionRequest` — caught, class filter | 3,512 | 0.049% |
+
+---
+
+## Realistic results (mitigation strategies)
+
+### Suspend-policy variants — tight-loop, breakpoint on `doWork()`
+
+| Scenario | ops (median) | vs baseline |
+|---|---:|---:|
+| Baseline — no JDWP | 174,534,425 | 100.0% |
+| Breakpoint, `SUSPEND_ALL` | 23,161 | 0.013% |
+| Breakpoint, `SUSPEND_NONE` | 808,422 | 0.46% |
+| Breakpoint, sampled (disable 100 ms after each hit) | 170,104,437 | 97.5% |
+
+### Multi-threaded (4 threads) — breakpoint on `mtWork()`
+
+| Scenario | ops (median) | vs baseline |
+|---|---:|---:|
+| Baseline — no JDWP, 4 threads | 1,737,436,456 | 100.0% |
+| Breakpoint, `SUSPEND_ALL` | 14,411 | <0.01% |
+| Breakpoint, `SUSPEND_EVENT_THREAD` | 28,881 | <0.01% |
+
+### Paced calls — ~500 µs of CPU work between `doWork()` calls (~10 K/5 s)
+
+| Scenario | ops (median) | vs baseline |
+|---|---:|---:|
+| Baseline — no JDWP | 9,988 | 100.0% |
+| Breakpoint, `SUSPEND_ALL` | 5,862 | 58.7% |
 
 ---
 
@@ -46,61 +74,92 @@ indistinguishable from the baseline.  **Attaching a jdiscript debugger to a
 running process has no measurable impact on throughput until it registers an
 event request.**
 
-### Every event with `SUSPEND_ALL` costs ~200–250 µs of wall time
+### Every `SUSPEND_ALL` event costs ~200–250 µs of wall time
 
 The default suspend policy for breakpoints and method-entry requests is
 `SUSPEND_ALL`: every hit stops every thread in the target JVM, ships an event
 over the JDI socket, waits for the debugger to call `resume()`, and then
-restarts all threads.  That round trip costs:
+restarts all threads.  That round trip costs roughly:
 
-| Event type | Observed cost |
+| Event type | Observed cost per hit |
 |---|---:|
-| Breakpoint (tight loop) | ~218 µs per hit |
-| `MethodEntryRequest` (tight loop) | ~242 µs per hit |
+| Breakpoint | ~218 µs |
+| `MethodEntryRequest` (class filter) | ~242 µs |
+| `ThreadStartRequest` | ~1.5 ms |
+| `ExceptionRequest` (caught) | ~1.4 ms |
 
-175 million no-overhead calls drop to about 23 thousand calls — a **~7,600×
-slowdown**.  The target is paused for essentially all of the 5-second window.
+Thread-start and exception events cost more per hit, likely because the JDI
+protocol includes stack frame data alongside those events.
 
-Thread-start and exception events cost more per hit (~1.4–1.5 ms), probably
-because the JDI protocol includes stack frame data along with those events.
+175 million no-overhead calls drop to about 23 thousand — a **~7,600×
+slowdown** — when every call triggers a breakpoint.  The target is paused for
+essentially all of the 5-second window.
 
-### The practical breakdowns
+### The rule of thumb
 
-**Breakpoints are fine on cold or infrequent paths.**  A breakpoint on a
-method that is called once per request, a few times per second, is invisible
-to users.  A breakpoint on a method called in a tight inner loop is not.
+> **overhead ≈ event\_rate × suspend\_cost**
+>
+> A breakpoint firing at 1 000 calls/sec adds ~200 ms of pausing per second —
+> measurable but not catastrophic.  The same breakpoint on a method called
+> 1 000 000 times/sec pauses the target for ~200 s per second of real time,
+> which means it barely moves.
 
-**`MethodEntryRequest` without a class filter is even worse** than what is
-shown above: it fires on every method entry in every class in the JVM,
-including JDK internals.  Always add `.addClassFilter(className)`.  Even with
-a class filter the per-hit cost is the same as a breakpoint; the difference is
-only in how many hits occur.
+### Sampling brings the overhead down to noise
 
-**`ThreadStartRequest`** cuts thread creation throughput by about 10×.  If the
-target creates threads at a low rate (a few per second) this is invisible.  If
-it creates hundreds per second (e.g., a thread-per-request server), monitoring
-every thread start will noticeably impact response times.
+Disabling a breakpoint for 100 ms after each hit caps the event rate at ~10/s
+regardless of how hot the method is.  At that rate the 200 µs overhead
+contributes only ~2 ms of pausing per second — **97.5% throughput retained**
+even in the tight-loop case.  This is the right tool whenever you need
+occasional samples from a hot path rather than a complete trace.
 
-**`ExceptionRequest` for caught exceptions** should almost always carry a class
-filter.  Without one it fires on every exception thrown anywhere in the JVM
-during startup and steady-state, and the per-hit cost (~1.4 ms) will tank
-throughput on anything that uses exceptions for control flow.
+### `SUSPEND_NONE` is faster but not free
 
-### Rule of thumb
+With `SUSPEND_NONE` the target thread is never paused; events are delivered
+asynchronously to the debugger while execution continues.  The tight-loop case
+goes from 23 K ops (SUSPEND_ALL) to 808 K ops — a **35× improvement** — but
+still only 0.46% of baseline.  The remaining overhead comes from the JVM's own
+cost of generating and queueing 174 million events faster than the debugger's
+event thread can drain them, creating backpressure.  At a realistic call rate
+(thousands/sec rather than millions/sec) `SUSPEND_NONE` adds negligible
+overhead and is ideal for counters, histograms, and fire-and-forget logging.
 
-> The overhead of a JDI event is ~200 µs at minimum (pure suspend/resume
-> round-trip).  Multiply by the rate at which that event fires in your target
-> to estimate total slowdown.  If the result is more than a few percent of the
-> method's budget, add a filter or use a different instrumentation strategy.
+### `SUSPEND_EVENT_THREAD` helps in heterogeneous multi-threaded code
+
+With `SUSPEND_ALL`, a breakpoint hit stops every thread — including threads that
+have nothing to do with the traced method.  `SUSPEND_EVENT_THREAD` only stops
+the hitting thread, letting the others keep running.
+
+In the benchmark's 4-thread case all threads spin on the same hot breakpoint,
+so they all pause in rapid succession anyway and the benefit is only ~2×
+(28 881 vs 14 411 ops).  The real gain appears in realistic multi-threaded
+servers where a breakpoint on a request-handling method affects only the thread
+handling that request, while the rest of the thread pool continues serving
+traffic.
+
+### At realistic call rates the overhead is manageable
+
+The paced-calls workload inserts ~500 µs of CPU spin-work between each
+`doWork()` call, delivering ~10 K calls in 5 s.  With a `SUSPEND_ALL`
+breakpoint on every call:
+
+- baseline: 9 988 ops → breakpoint: 5 862 ops (**58.7% throughput retained**)
+- each iteration: 500 µs work + 218 µs JDI overhead = 718 µs total (vs 500 µs)
+- throughput reduction: 500/718 ≈ 70% retained; measured 59%, close enough
+
+A method called ~2 000 times per second (e.g., a moderately busy HTTP handler)
+with a `SUSPEND_ALL` breakpoint on it will lose roughly 30% throughput.
+A method called ~100 times per second loses only ~2%.
 
 ---
 
-## Mitigation strategies
+## Practical guidance
 
 | Situation | Recommendation |
 |---|---|
-| Need to trace a hot method | Use `MethodExitRequest` on entry, read the return value — still slow, but avoids setting a second breakpoint. Consider sampling: set a breakpoint, record one hit, disable, re-enable after N ms. |
-| Thread-start overhead too high | Filter with `.addClassFilter()` or use `ThreadDeathRequest` only (cheaper). |
-| Exception events on a hot throw path | Add `.addClassFilter(throwingClass)` and consider switching to `notifyCaught=false` if you only care about uncaught exceptions. |
-| Need low overhead on a busy class | `MethodExitRequest` with class filter has the same per-event cost as `MethodEntryRequest`, but fires less often for void/early-return methods. |
-| Any hot-path event | Change the suspend policy to `SUSPEND_EVENT_THREAD` instead of `SUSPEND_ALL` to avoid stopping unrelated threads. Still pays the socket round-trip but reduces collateral pausing. |
+| **Tracing a cold or low-rate method** | Any policy works; use `SUSPEND_ALL` (default) for simplicity. |
+| **Tracing a method called hundreds/sec** | Use `SUSPEND_EVENT_THREAD` to avoid pausing uninvolved threads. Measure impact in staging first. |
+| **Tracing a hot-path method** | Use sampling: disable the request after each hit, re-enable after a delay. 97.5% throughput at 10 ms sampling interval. |
+| **Counting invocations without inspecting state** | Use `SUSPEND_NONE`; the target never pauses and the event is delivered asynchronously. |
+| **`MethodEntryRequest` on a busy class** | Always add `.addClassFilter(className)`. Without it every JDK method entry fires the event. |
+| **Exception monitoring on a hot throw path** | Add `.addClassFilter(throwingClass)` and prefer `notifyUncaught=true, notifyCaught=false` unless you specifically need caught exceptions. |
+| **Thread-start on a high-churn pool** | Consider `ThreadDeathRequest` only, or sample with a counter and skip most events in the handler. |
