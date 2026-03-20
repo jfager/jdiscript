@@ -33,4 +33,14 @@ class UtilsTest {
         );
         assertSame(cause, thrown.getCause());
     }
+
+    @Test
+    void println_runs_without_error() {
+        assertDoesNotThrow(() -> Utils.println("test output"));
+    }
+
+    @Test
+    void constructor_is_accessible() {
+        assertDoesNotThrow(() -> new Utils());
+    }
 }
