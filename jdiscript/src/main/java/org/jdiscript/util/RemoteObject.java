@@ -1,12 +1,16 @@
 package org.jdiscript.util;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.InterfaceType;
+import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
@@ -151,6 +155,74 @@ public class RemoteObject {
             return thread.frame(0).thisObject();
         } catch (IncompatibleThreadStateException e) {
             return null;
+        }
+    }
+
+    /**
+     * Read a local variable by name from the current stack frame.
+     * <p>
+     * Requires that the target class was compiled with debug information
+     * (the default for most build tools).  Returns {@link Optional#empty()}
+     * if the variable is not in scope, the thread is not suspended, or debug
+     * information is unavailable.
+     *
+     * <h2>Example usage</h2>
+     * <pre>
+     *   // In a breakpoint handler:
+     *   String userId = RemoteObject.localVar(thread, "userId")
+     *       .map(v -&gt; RemoteObject.valueToString(v, thread))
+     *       .orElse("&lt;not in scope&gt;");
+     * </pre>
+     *
+     * @param thread A suspended thread.
+     * @param name   The local variable name.
+     * @return The variable's value, or {@link Optional#empty()} if unavailable.
+     */
+    public static Optional<Value> localVar(ThreadReference thread, String name) {
+        try {
+            StackFrame frame = thread.frame(0);
+            for (LocalVariable v : frame.visibleVariables()) {
+                if (v.name().equals(name)) {
+                    return Optional.ofNullable(frame.getValue(v));
+                }
+            }
+        } catch (IncompatibleThreadStateException | AbsentInformationException e) {
+            // thread not suspended, or no debug info
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Read all visible local variables from the current stack frame as a
+     * name-to-string map, suitable for logging or structured output.
+     * <p>
+     * Requires debug information in the target class.  Returns an empty map
+     * if the thread is not suspended or debug information is unavailable.
+     * Insertion order is preserved.
+     *
+     * <h2>Example usage</h2>
+     * <pre>
+     *   // In a breakpoint handler:
+     *   Map&lt;String, String&gt; locals = RemoteObject.locals(thread);
+     *   locals.forEach((name, value) -&gt;
+     *       System.out.println("  " + name + " = " + value));
+     * </pre>
+     *
+     * @param thread A suspended thread.
+     * @return A map of variable name to readable string value.
+     */
+    public static Map<String, String> locals(ThreadReference thread) {
+        try {
+            StackFrame frame = thread.frame(0);
+            List<LocalVariable> visible = frame.visibleVariables();
+            Map<LocalVariable, Value> values = frame.getValues(visible);
+            Map<String, String> result = new LinkedHashMap<>();
+            for (LocalVariable v : visible) {
+                result.put(v.name(), valueToString(values.get(v), thread));
+            }
+            return result;
+        } catch (IncompatibleThreadStateException | AbsentInformationException e) {
+            return Collections.emptyMap();
         }
     }
 

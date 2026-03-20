@@ -72,6 +72,19 @@ Return chainable `Chaining*Request` objects. Call `.enable()` to activate.
 All request builders also have a no-handler overload (add handler later with
 `.addHandler()`).
 
+### Entry/exit pairing
+
+| Method | Description |
+|--------|-------------|
+| `onMethodTimed(className, methodName, BiConsumer<BreakpointEvent, Long>)` | Deliver entry event and wall-clock duration (ms) for each call. Instance methods only. |
+
+### Heap inspection
+
+| Method | Description |
+|--------|-------------|
+| `instanceCount(className)` | Count live instances of a class across all classloaders. Returns 0 if not loaded. |
+| `findInstances(className, maxCount)` | Retrieve up to `maxCount` live `ObjectReference`s per loaded type. |
+
 ### Stack analysis utilities
 
 | Method | Description |
@@ -112,6 +125,8 @@ In `org.jdiscript.util.RemoteObject`. All methods are static.
 | `valueToString(value, thread)` | Convert any JDI `Value` to a readable string. |
 | `argToString(thread, index)` | Read argument at index, convert to readable string. |
 | `thisObject(thread)` | Get `this` reference from current frame. |
+| `localVar(thread, name)` | Read a named local variable from the current frame. Returns `Optional<Value>`. Requires `-g` debug info. |
+| `locals(thread)` | Read all visible local variables as `Map<String, String>`. Requires `-g` debug info. |
 
 **Method signatures use JNI format:**
 - `()Ljava/lang/String;` — no args, returns String

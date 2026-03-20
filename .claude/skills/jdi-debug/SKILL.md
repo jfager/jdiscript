@@ -116,8 +116,12 @@ String key = j.stacktraceKey(thread);                             // for histogr
 | Track exceptions | `onException(caught, uncaught, handler)` |
 | Thread lifecycle | `onThreadStart` / `onThreadDeath` |
 | Lock contention | `monitorContendedEnterRequest` |
-| Method timing | breakpoint + `onCurrentMethodExitUnchecked` |
+| Method timing (instance methods) | `onMethodTimed(class, method, (entry, ms) -> ...)` |
+| Method timing (manual / static) | breakpoint + `onCurrentMethodExitUnchecked` |
 | Call path histogram | breakpoint + `stacktraceKey(thread)` |
+| Count live instances | `instanceCount(className)` |
+| Inspect live objects | `findInstances(className, maxCount)` |
+| Read local variables | `RemoteObject.localVar(thread, name)` / `RemoteObject.locals(thread)` |
 
 ## Reference
 

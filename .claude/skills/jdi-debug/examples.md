@@ -242,6 +242,70 @@ j.breakpointRequest(location, (OnBreakpoint) e -> {
 }).enable();
 ```
 
+## 12. Time method calls (slow-call detection)
+
+Detect calls that exceed a latency threshold without modifying the target:
+
+```java
+j.onMethodTimed("com.example.UserService", "findUser",
+    (entry, durationMs) -> {
+        if (durationMs > 200) {
+            System.out.printf("SLOW findUser: %dms  caller=%s%n",
+                durationMs,
+                j.nearestCaller("com.example", entry.thread()));
+        }
+    });
+```
+
+Works for instance methods. Duration is in wall-clock milliseconds.
+See `example/src/main/java/org/jdiscript/example/HeapInspector.java`.
+
+## 13. Count and inspect live instances
+
+Detect accumulation and inspect state of live objects without a heap dump:
+
+```java
+// Snapshot instance count at a known point (e.g. after each request)
+j.onMethodInvocation("com.example.RequestHandler", "handleRequest", e -> {
+    long sessionCount  = j.instanceCount("com.example.UserSession");
+    long connectionCount = j.instanceCount("com.example.DBConnection");
+    System.out.println("sessions=" + sessionCount + " connections=" + connectionCount);
+});
+
+// Inspect what the live Connection objects actually look like
+j.onMethodInvocation("com.example.RequestHandler", "handleRequest", e -> {
+    j.findInstances("com.example.DBConnection", 20).forEach(ref -> {
+        String state = RemoteObject.invokeRemote(ref, "getState",
+            "()Ljava/lang/String;", e.thread())
+            .map(v -> RemoteObject.valueToString(v, e.thread()))
+            .orElse("?");
+        long age = /* read createdAt field... */ 0;
+        System.out.println("  conn@" + ref.uniqueID() + " state=" + state);
+    });
+});
+```
+
+See `example/src/main/java/org/jdiscript/example/HeapInspector.java`.
+
+## 14. Inspect local variables
+
+Read arbitrary locals from the current frame (requires `-g` debug info, the
+default for most build tools):
+
+```java
+j.onMethodInvocation("com.example.OrderService", "processOrder", e -> {
+    // Read a specific local by name
+    String orderId = RemoteObject.localVar(e.thread(), "orderId")
+        .map(v -> RemoteObject.valueToString(v, e.thread()))
+        .orElse("<not yet assigned>");
+    System.out.println("processOrder orderId=" + orderId);
+
+    // Or dump all locals at once
+    Map<String, String> locals = RemoteObject.locals(e.thread());
+    locals.forEach((name, value) -> System.out.println("  " + name + " = " + value));
+});
+```
+
 ## Full reference example
 
 See `log-config-debugger/src/main/java/org/jdiscript/example/LogConfigDebugger.java`

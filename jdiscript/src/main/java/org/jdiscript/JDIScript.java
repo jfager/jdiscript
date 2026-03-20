@@ -1,8 +1,10 @@
 package org.jdiscript;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -49,10 +51,12 @@ import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.Location;
 import com.sun.jdi.Method;
+import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.LocatableEvent;
 import com.sun.jdi.request.AccessWatchpointRequest;
 import com.sun.jdi.request.BreakpointRequest;
@@ -1192,6 +1196,116 @@ public class JDIScript {
     	final String methName = method.name();
     	final String methSig = String.join(", ", method.argumentTypeNames());
     	return refType + "." + methName + "(" + methSig + ")";
+    }
+
+    // ---------------------------------------------------------------
+    // Heap inspection
+    // ---------------------------------------------------------------
+
+    /**
+     * Count the number of live instances of a class in the target VM.
+     * <p>
+     * Uses {@link VirtualMachine#instanceCounts(List)} which requires the VM
+     * to have been started with {@code -XX:+EnableDynamicAgentLoading} or with
+     * standard JDWP — both of which are always true when you are attached via
+     * jdiscript.  Sums counts across all loaded classes matching the name (e.g.
+     * if the same class appears in multiple class loaders).
+     * <p>
+     * Typical use: check whether objects are being retained unexpectedly.
+     * <pre>
+     *   long count = j.instanceCount("com.example.UserSession");
+     *   System.out.println("Live sessions: " + count);
+     * </pre>
+     *
+     * @param className Fully-qualified class name (e.g. {@code "com.example.Foo"}).
+     * @return The total number of live instances, or 0 if the class is not loaded.
+     */
+    public long instanceCount(String className) {
+        List<ReferenceType> types = vm.classesByName(className);
+        if (types.isEmpty()) return 0;
+        long[] counts = vm.instanceCounts(types);
+        long total = 0;
+        for (long c : counts) total += c;
+        return total;
+    }
+
+    /**
+     * Retrieve up to {@code maxCount} live instances of a class from the
+     * target VM.
+     * <p>
+     * The returned references are valid only while the VM is suspended or
+     * while the calling thread holds them.  Iterate promptly; do not store
+     * them beyond the enclosing event handler.
+     * <p>
+     * Typical use: inspect the state of all live objects of a given type.
+     * <pre>
+     *   j.findInstances("com.example.Connection", 50).forEach(ref -> {
+     *       String state = RemoteObject.invokeRemote(ref, "getState",
+     *           "()Ljava/lang/String;", thread)
+     *           .map(v -> RemoteObject.valueToString(v, thread))
+     *           .orElse("?");
+     *       System.out.println(ref.uniqueID() + ": " + state);
+     *   });
+     * </pre>
+     *
+     * @param className Fully-qualified class name.
+     * @param maxCount  Maximum number of instances to return per loaded type.
+     * @return A list of object references (may be empty if the class is not loaded).
+     */
+    public List<ObjectReference> findInstances(String className, long maxCount) {
+        List<ReferenceType> types = vm.classesByName(className);
+        List<ObjectReference> result = new ArrayList<>();
+        for (ReferenceType type : types) {
+            result.addAll(type.instances(maxCount));
+        }
+        return result;
+    }
+
+    // ---------------------------------------------------------------
+    // Entry/exit pairing
+    // ---------------------------------------------------------------
+
+    /**
+     * Time a method invocation and deliver the duration to a callback.
+     * <p>
+     * Combines {@link #onMethodInvocation(String, String, OnBreakpoint)} with
+     * {@link #onCurrentMethodExitUnchecked(ThreadReference, OnBreakpoint)} so
+     * that the caller receives both the entry event and the wall-clock duration
+     * of each call.  This is the recommended pattern for slow-call detection,
+     * SLA monitoring, and profiling production code without modifying it.
+     * <p>
+     * <strong>Limitations:</strong> Uses an instance filter on {@code this}
+     * to correlate entry with exit, so it works correctly for instance methods
+     * only.  Static methods and constructors will throw at runtime (the exit
+     * breakpoint requires a non-null {@code thisObject}).
+     * <p>
+     * Example — log calls slower than 100 ms:
+     * <pre>
+     *   j.onMethodTimed("com.example.UserService", "findUser",
+     *       (entry, durationMs) -&gt; {
+     *           if (durationMs &gt; 100) {
+     *               System.out.println("SLOW findUser: " + durationMs + "ms"
+     *                   + " caller=" + j.nearestCaller("com.example", entry.thread()));
+     *           }
+     *       });
+     * </pre>
+     *
+     * @param className  Fully-qualified class name.
+     * @param methodName Method name (all overloads are instrumented).
+     * @param handler    Receives the entry event and the call duration in milliseconds.
+     * @return The underlying {@link ChainingClassPrepareRequest}, which can be
+     *         used to disable or delete the request later.
+     */
+    public ChainingClassPrepareRequest onMethodTimed(String className,
+                                                      String methodName,
+                                                      BiConsumer<BreakpointEvent, Long> handler) {
+        return onMethodInvocation(className, methodName, entryEvent -> {
+            long start = System.nanoTime();
+            onCurrentMethodExitUnchecked(entryEvent.thread(), exit -> {
+                handler.accept(entryEvent, (System.nanoTime() - start) / 1_000_000);
+                deleteEventRequest(exit.request());
+            });
+        });
     }
 
 }
