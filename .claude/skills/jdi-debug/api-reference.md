@@ -22,6 +22,38 @@ listener.start();
 VirtualMachine vm = listener.next();
 ```
 
+## JDISession — Interactive / Agentic Entry Point
+
+`JDISession` (in `org.jdiscript.util`) is the entry point for **interactive and
+agentic** workflows where questions aren't known upfront.  It wraps `JDIScript`
+and starts a non-blocking daemon event loop.
+
+```java
+// Start (replaces new JDIScript(vm) + j.run() for interactive use)
+JDISession session = JDISession.start(vm);
+JDISession session = JDISession.start(vm, List.of(vmDeathHandler));
+
+// Access the full JDIScript API
+session.j.instanceCount("com.example.Foo");
+session.j.onMethodInvocation("com.example.Foo", "bar", e -> { ... });
+
+// Pause VM, read state, resume — no breakpoint needed
+session.withSuspend(() -> { ... });
+long count = session.withSuspend(() -> session.j.instanceCount("com.example.Foo"));
+
+// Await the next hit of a method (CompletableFuture)
+CompletableFuture<BreakpointEvent> fut = session.awaitMethodInvocation("Foo", "bar");
+BreakpointEvent e = fut.orTimeout(10, SECONDS).join();
+
+// Block until target exits
+session.join();
+
+// Disconnect (target keeps running)
+session.close();  // also via try-with-resources
+```
+
+`session.j` is a public field — ergonomic for JShell / REPL contexts.
+
 ## JDIScript — Main Entry Point
 
 Constructor: `new JDIScript(VirtualMachine vm)`
@@ -100,10 +132,14 @@ All request builders also have a no-handler overload (add handler later with
 
 | Method | Description |
 |--------|-------------|
-| `run()` | Run until VM exits. |
-| `run(millis)` | Run with timeout. |
-| `run(List<DebugEventHandler>)` | Run with VM death/disconnect handlers. |
-| `run(List<DebugEventHandler>, millis)` | Run with handlers and timeout. |
+| `run()` | Run until VM exits (blocks). |
+| `run(millis)` | Run with timeout (blocks). |
+| `run(List<DebugEventHandler>)` | Run with VM death/disconnect handlers (blocks). |
+| `run(List<DebugEventHandler>, millis)` | Run with handlers and timeout (blocks). |
+| `start()` | Start event loop in background; return immediately. |
+| `start(List<DebugEventHandler>)` | Same, with VM-level handlers. |
+| `withSuspend(Runnable)` | Suspend VM, run work, resume. |
+| `withSuspend(Supplier<T>)` | Suspend VM, run work returning value, resume. |
 
 ### Other utilities
 

@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.jdiscript.events.DebugEventDispatcher;
@@ -198,6 +199,94 @@ public class JDIScript {
             Thread.currentThread().interrupt();
         }
 
+    }
+
+    /**
+     * Start the event loop in the background and return immediately.
+     * <p>
+     * Unlike {@link #run()}, this method does not block.  The returned
+     * {@link EventThread} runs as a daemon thread; the JVM can exit normally
+     * even if the target VM is still connected.
+     * <p>
+     * Handlers registered via any of the {@code on*} / {@code *Request} methods
+     * — before or after calling {@code start()} — are picked up automatically.
+     * This is the foundation for interactive and agentic debugging: start the
+     * loop once, then drive it from external input (stdin, HTTP, AI tool calls,
+     * a JShell session, etc.).
+     * <p>
+     * Example:
+     * <pre>
+     *   JDIScript j = new JDIScript(new VMSocketAttacher(5005).attach());
+     *   EventThread et = j.start();
+     *   // Register handlers dynamically...
+     *   j.onMethodInvocation("com.example.Foo", "bar", e -&gt; { ... });
+     *   et.join(); // optional: block until VM exits
+     * </pre>
+     *
+     * @return The running {@link EventThread} (daemon thread).
+     */
+    public EventThread start() {
+        return start(Collections.emptyList());
+    }
+
+    /**
+     * Like {@link #start()}, with VM-level event handlers (VMDeath, VMDisconnect,
+     * etc.) pre-registered.
+     *
+     * @param handlers VM-level event handlers.
+     * @return The running {@link EventThread} (daemon thread).
+     */
+    public EventThread start(List<DebugEventHandler> handlers) {
+        DebugEventDispatcher dispatcher = new DebugEventDispatcher();
+        dispatcher.addHandlers(handlers);
+        EventThread et = new EventThread(vm, dispatcher);
+        et.setDaemon(true);
+        et.start();
+        return et;
+    }
+
+    /**
+     * Suspend all threads in the target VM, run {@code work}, then resume.
+     * <p>
+     * This is the primary mechanism for <em>point-in-time inspection</em> in
+     * interactive and agentic workflows: pause the VM, read state (instance
+     * counts, field values, etc.), and let it continue — all without needing a
+     * breakpoint event.
+     * <p>
+     * {@link VirtualMachine#suspend()} and {@link VirtualMachine#resume()} use a
+     * reference count, so calling this inside an event handler (where the VM is
+     * already partly suspended) is safe.
+     * <p>
+     * <strong>Do not invoke remote methods</strong> inside {@code work} unless
+     * you use {@link ObjectReference#INVOKE_SINGLE_THREADED}, since all other
+     * threads are paused.
+     *
+     * @param work Code to execute while the VM is fully suspended.
+     */
+    public void withSuspend(Runnable work) {
+        vm.suspend();
+        try {
+            work.run();
+        } finally {
+            vm.resume();
+        }
+    }
+
+    /**
+     * Like {@link #withSuspend(Runnable)} but returns a value.
+     *
+     * @param <T>  The return type.
+     * @param work Code to execute while the VM is fully suspended; its return
+     *             value is forwarded to the caller.
+     * @return Whatever {@code work} returns.
+     */
+    public <T> T withSuspend(Supplier<T> work) {
+        vm.suspend();
+        try {
+            return work.get();
+        } finally {
+            vm.resume();
+        }
     }
 
     // Convenience methods for creating EventRequests, that will automatically

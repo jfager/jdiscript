@@ -122,6 +122,9 @@ String key = j.stacktraceKey(thread);                             // for histogr
 | Count live instances | `instanceCount(className)` |
 | Inspect live objects | `findInstances(className, maxCount)` |
 | Read local variables | `RemoteObject.localVar(thread, name)` / `RemoteObject.locals(thread)` |
+| Interactive / REPL / agent loop | `JDISession.start(vm)` |
+| Inspect state without breakpoint | `session.withSuspend(() -> ...)` |
+| Await one specific event | `session.awaitMethodInvocation(class, method)` |
 
 ## Reference
 

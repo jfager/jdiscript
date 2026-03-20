@@ -242,7 +242,66 @@ j.breakpointRequest(location, (OnBreakpoint) e -> {
 }).enable();
 ```
 
-## 12. Time method calls (slow-call detection)
+## 12. Interactive / agentic session (JDISession)
+
+Use `JDISession` when the script doesn't know all its questions upfront —
+REPL sessions, agent query loops, or hybrid scripts.
+
+```java
+// Start the event loop without blocking
+JDISession session = JDISession.start(new VMSocketAttacher(5005).attach());
+
+// --- Pattern A: inspect state right now, no breakpoint needed ---
+long sessions = session.withSuspend(
+    () -> session.j.instanceCount("com.example.UserSession"));
+System.out.println("live sessions: " + sessions);
+
+// --- Pattern B: sequential awaiting — ask one question at a time ---
+// (Works for already-loaded classes, which is typical when attaching
+//  to a running server)
+BreakpointEvent e = session
+    .awaitMethodInvocation("com.example.UserService", "findUser")
+    .orTimeout(30, TimeUnit.SECONDS)
+    .join();
+System.out.println("findUser arg0=" + RemoteObject.argToString(e.thread(), 0));
+System.out.println("locals: " + RemoteObject.locals(e.thread()));
+
+// --- Pattern C: agent loop ---
+while (!done) {
+    String target = agent.nextMethodToWatch();  // AI decides
+    BreakpointEvent hit = session
+        .awaitMethodInvocation("com.example.Foo", target)
+        .orTimeout(10, TimeUnit.SECONDS)
+        .join();
+    agent.process(hit);  // AI analyzes and decides next step
+}
+
+// Disconnect without killing the target
+session.close();
+```
+
+See `example/src/main/java/org/jdiscript/example/InteractiveExample.java`.
+
+## 13. JShell / REPL integration
+
+`JDISession` is designed to be used from JShell without any boilerplate.
+Start a JShell with jdiscript on the classpath, then:
+
+```
+jshell --add-modules jdk.jdi --class-path path/to/jdiscript.jar
+
+jshell> import org.jdiscript.util.*; import com.sun.jdi.*;
+jshell> var s = JDISession.start(new VMSocketAttacher(5005).attach())
+jshell> s.withSuspend(() -> s.j.instanceCount("com.example.Foo"))
+==> 42
+jshell> s.j.onException(true, true, e -> System.out.println(e.exception()))
+jshell> s.close()
+```
+
+No script file required. `session.j` is a public field specifically for this
+ergonomic access pattern.
+
+## 15. Time method calls (slow-call detection)
 
 Detect calls that exceed a latency threshold without modifying the target:
 
@@ -260,7 +319,7 @@ j.onMethodTimed("com.example.UserService", "findUser",
 Works for instance methods. Duration is in wall-clock milliseconds.
 See `example/src/main/java/org/jdiscript/example/HeapInspector.java`.
 
-## 13. Count and inspect live instances
+## 16. Count and inspect live instances
 
 Detect accumulation and inspect state of live objects without a heap dump:
 
@@ -287,7 +346,7 @@ j.onMethodInvocation("com.example.RequestHandler", "handleRequest", e -> {
 
 See `example/src/main/java/org/jdiscript/example/HeapInspector.java`.
 
-## 14. Inspect local variables
+## 17. Inspect local variables
 
 Read arbitrary locals from the current frame (requires `-g` debug info, the
 default for most build tools):
