@@ -1,6 +1,7 @@
 plugins {
     id 'maven-publish'
     id 'signing'
+    id 'jacoco'
 }
 
 // On Java 9+, JDI lives in the jdk.jdi module instead of tools.jar
@@ -50,6 +51,21 @@ afterEvaluate {
 
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    // Exclude generated code from coverage metrics
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: ['org/jdiscript/requests/Chaining*'])
+        }))
+    }
 }
 
 java {
