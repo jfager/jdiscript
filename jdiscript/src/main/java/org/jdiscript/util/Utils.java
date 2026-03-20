@@ -3,6 +3,8 @@ package org.jdiscript.util;
 
 public class Utils {
 
+    private Utils() {}
+
     public static void println(String s) {
         System.out.println(s);
     }

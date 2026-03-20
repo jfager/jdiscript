@@ -361,22 +361,33 @@ class DebugEventDispatcherTest {
         assertTrue(called.get());
     }
 
-    // --- Mismatched handler type is not called ---
+    // --- Dispatch error cases ---
 
     @Test
-    void wrong_handler_type_falls_through_to_catchall() {
+    void dispatch_throws_for_request_with_no_handlers() {
+        // A request was created but addHandler was never called on it — this is
+        // always a programming error, so dispatch() should fail loudly.
+        BreakpointEvent event = mock(BreakpointEvent.class);
+        EventRequest request = mockRequest();   // real property storage, no handlers
+        when(event.request()).thenReturn(request);
+
+        assertThrows(RuntimeException.class, () ->
+            new DebugEventDispatcher().dispatch(event)
+        );
+    }
+
+    @Test
+    void wrong_handler_type_is_silently_skipped() {
+        // A handler registered for StepEvent receives a BreakpointEvent.
+        // No branch matches, so the event is silently ignored rather than
+        // crashing with a ClassCastException.
         BreakpointEvent event = mock(BreakpointEvent.class);
         EventRequest request = mockRequest();
         when(event.request()).thenReturn(request);
 
-        // Register a StepEvent handler for a BreakpointEvent — the dispatcher's
-        // if-else chain won't match OnStep for a BreakpointEvent, so it falls
-        // through to the OnEvent catchall which tries to cast and throws.
         OnStep handler = e -> {};
         DebugEventDispatcher.addHandler(request, handler);
 
-        assertThrows(ClassCastException.class, () ->
-            new DebugEventDispatcher().dispatch(event)
-        );
+        assertDoesNotThrow(() -> new DebugEventDispatcher().dispatch(event));
     }
 }

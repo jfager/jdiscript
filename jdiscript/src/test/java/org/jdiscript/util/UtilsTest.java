@@ -40,7 +40,9 @@ class UtilsTest {
     }
 
     @Test
-    void constructor_is_accessible() {
-        assertDoesNotThrow(() -> new Utils());
+    void constructor_is_private() throws Exception {
+        var ctor = Utils.class.getDeclaredConstructor();
+        assertFalse(java.lang.reflect.Modifier.isPublic(ctor.getModifiers()),
+            "Utils is a utility class and should have a private constructor");
     }
 }

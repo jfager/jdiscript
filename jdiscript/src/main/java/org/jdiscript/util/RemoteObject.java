@@ -77,11 +77,19 @@ public class RemoteObject {
                                                String methodName,
                                                String methodSig,
                                                ThreadReference thread) {
+        return invokeRemote(obj, methodName, methodSig, thread, Collections.emptyList());
+    }
+
+    public static Optional<Value> invokeRemote(ObjectReference obj,
+                                               String methodName,
+                                               String methodSig,
+                                               ThreadReference thread,
+                                               List<Value> args) {
         try {
             Method method = resolveMethod(obj, methodName, methodSig);
             if (method == null) return Optional.empty();
             Value result = obj.invokeMethod(
-                thread, method, Collections.emptyList(),
+                thread, method, args,
                 ObjectReference.INVOKE_SINGLE_THREADED);
             return Optional.ofNullable(result);
         } catch (Exception e) {
@@ -162,7 +170,11 @@ public class RemoteObject {
         if (type instanceof ClassType ct) {
             return ct.concreteMethodByName(methodName, methodSig);
         }
-        // For interfaces, try java.lang.Object
+        // For interface-typed references (e.g. a proxy object), JDI doesn't expose
+        // concrete methods on the interface itself. Fall back to java.lang.Object, which
+        // covers the common case of invoking toString()/hashCode()/equals(). For methods
+        // declared only on the interface this will return null and invokeRemote will
+        // return Optional.empty().
         if (type instanceof InterfaceType) {
             for (ReferenceType rt : obj.virtualMachine().classesByName("java.lang.Object")) {
                 if (rt instanceof ClassType objType) {

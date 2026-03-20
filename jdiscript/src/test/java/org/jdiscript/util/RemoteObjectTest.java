@@ -81,6 +81,47 @@ class RemoteObjectTest {
     // --- invokeRemote ---
 
     @Test
+    void invokeRemote_with_args_passes_args_to_invocation() throws Exception {
+        ThreadReference thread = mock(ThreadReference.class);
+        ObjectReference obj = mock(ObjectReference.class);
+        ClassType classType = mock(ClassType.class);
+        Method method = mock(Method.class);
+        StringReference result = mock(StringReference.class);
+        Value arg = mock(Value.class);
+
+        when(obj.referenceType()).thenReturn(classType);
+        when(classType.concreteMethodByName("format", "(Ljava/lang/Object;)Ljava/lang/String;"))
+            .thenReturn(method);
+        when(obj.invokeMethod(thread, method, List.of(arg),
+                ObjectReference.INVOKE_SINGLE_THREADED)).thenReturn(result);
+        when(result.value()).thenReturn("formatted");
+
+        Optional<Value> out = RemoteObject.invokeRemote(
+            obj, "format", "(Ljava/lang/Object;)Ljava/lang/String;", thread, List.of(arg));
+        assertTrue(out.isPresent());
+        assertSame(result, out.get());
+    }
+
+    @Test
+    void invokeRemote_no_arg_overload_still_works() throws Exception {
+        // The existing no-arg overload must keep working after refactoring to delegate.
+        ThreadReference thread = mock(ThreadReference.class);
+        ObjectReference obj = mock(ObjectReference.class);
+        ClassType classType = mock(ClassType.class);
+        Method method = mock(Method.class);
+        StringReference result = mock(StringReference.class);
+
+        when(obj.referenceType()).thenReturn(classType);
+        when(classType.concreteMethodByName("toString", "()Ljava/lang/String;")).thenReturn(method);
+        when(obj.invokeMethod(thread, method, Collections.emptyList(),
+                ObjectReference.INVOKE_SINGLE_THREADED)).thenReturn(result);
+        when(result.value()).thenReturn("str");
+
+        Optional<Value> out = RemoteObject.invokeRemote(obj, "toString", "()Ljava/lang/String;", thread);
+        assertTrue(out.isPresent());
+    }
+
+    @Test
     void invokeRemote_returns_empty_when_method_not_found() {
         ThreadReference thread = mock(ThreadReference.class);
         ObjectReference obj = mock(ObjectReference.class);

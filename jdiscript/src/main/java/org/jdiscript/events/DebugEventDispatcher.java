@@ -92,7 +92,7 @@ public class DebugEventDispatcher {
 
         final Set<DebugEventHandler> requestHandlers = getHandlers(request);
 
-        if(requestHandlers == null) {
+        if(requestHandlers.isEmpty()) {
             throw new RuntimeException("No request handlers specified for event "
                                        + event);
         }
@@ -205,7 +205,7 @@ public class DebugEventDispatcher {
         } else if(event instanceof LocatableEvent &&
                   handler instanceof OnLocatable) {
             ((OnLocatable)handler).locatable((LocatableEvent)event);
-        } else {
+        } else if(handler instanceof OnEvent) {
             ((OnEvent)handler).event(event);
         }
     }
